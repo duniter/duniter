@@ -34,10 +34,10 @@ export const ExecuteCommand = () => {
 
       // Callback for command rejection
       let onReject: any = () =>
-        Promise.reject(Error("Uninitilized rejection throw"));
+        Promise.reject(Error("Uninitialized rejection throw"));
 
       // Command execution promise
-      const currentCommand = new Promise((resolve, reject) => {
+      const currentCommand = new Promise<void>((resolve, reject) => {
         onResolve = resolve;
         onReject = reject;
       });

@@ -14,7 +14,7 @@ export interface ManualPromise<T> extends Querable<T> {
 export function newManualPromise<T>() {
   let resolveCb: (data: T) => void = () => {};
   let rejectCb: (error: Error) => void = () => {};
-  const p = new Promise((res, rej) => {
+  const p = new Promise<T>((res, rej) => {
     resolveCb = res;
     rejectCb = rej;
   });

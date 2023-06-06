@@ -50,7 +50,7 @@ export const ProverDependency = {
         conf.powSecurityRetryDelay = ProverConstants.POW_SECURITY_RETRY_DELAY;
         conf.powMaxHandicap = ProverConstants.POW_MAXIMUM_ACCEPTABLE_HANDICAP;
       },
-      beforeSave: async (conf: ConfDTO) => {
+      beforeSave: async (conf: Partial<ConfDTO>) => {
         delete conf.powSecurityRetryDelay;
         delete conf.powMaxHandicap;
       },
@@ -244,7 +244,7 @@ function generateAndSend(
   getGenerationMethod: any
 ) {
   const logger = server.logger;
-  return new Promise((resolve, reject) => {
+  return new Promise<any>((resolve, reject) => {
     if (!program.submitLocal) {
       if (!program.submitHost) {
         throw "Option --submit-host is required.";
@@ -351,7 +351,13 @@ function proveAndSend(
               next();
             } else {
               const peer = PeerDTO.fromJSONObject({
-                endpoints: [[port == "443" ? "BMAS" : "BASIC_MERKLED_API", host, port].join(" ")],
+                endpoints: [
+                  [
+                    port == "443" ? "BMAS" : "BASIC_MERKLED_API",
+                    host,
+                    port,
+                  ].join(" "),
+                ],
               });
               program.show && console.log(proven.getRawSigned());
               logger.info("Posted block " + proven.getRawSigned());

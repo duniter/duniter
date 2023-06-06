@@ -35,7 +35,7 @@ export const Upnp = async function (
       await Q.nbind(client.externalIp, client)();
     } catch (err) {
       if (err && err.message == "timeout") {
-        throw 'No UPnP gateway found: your node won\'t be reachable from the Internet. Use --noupnp option to avoid this message.';
+        throw "No UPnP gateway found: your node won't be reachable from the Internet. Use --noupnp option to avoid this message.";
       }
       throw err;
     } finally {

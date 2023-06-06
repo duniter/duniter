@@ -68,8 +68,8 @@ export interface CurrencyConfDTO {
 export interface KeypairConfDTO {
   pair: Keypair;
   oldPair: Keypair | null;
-  salt: string;
-  passwd: string;
+  salt?: string;
+  passwd?: string;
 }
 
 export interface NetworkConfDTO {

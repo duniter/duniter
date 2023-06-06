@@ -41,7 +41,7 @@ export class SQLiteDriver {
 
         // Force case sensitiveness on LIKE operator
         const sql = "PRAGMA case_sensitive_like=ON";
-        await new Promise<any>((resolve, reject) =>
+        await new Promise<void>((resolve, reject) =>
           sqlite.exec(sql, (err: any) => {
             if (err)
               return reject(
@@ -103,8 +103,8 @@ export class SQLiteDriver {
     this.logger.debug('Database "%s" removed', this.path);
   }
 
-  get closed() {
-    return this.dbPromise;
+  isClosed() {
+    return !this.dbPromise;
   }
 
   async closeConnection(): Promise<void> {
@@ -115,7 +115,7 @@ export class SQLiteDriver {
     if (process.platform === "win32") {
       db.open; // For an unknown reason, we need this line.
     }
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       this.logger.debug('Closing SQLite database "%s"...', this.path);
       db.on("close", () => {
         this.logger.info('Database "%s" closed.', this.path);

@@ -167,9 +167,9 @@ export class Server extends stream.Duplex implements HookableServer {
   async getSQLiteDB(dbName: string, home: string) {
     // Check in cach (useful to avoid migration task to create a new driver on the same DB file)
     let driver: SQLiteDriver = this.sqliteDBs[dbName];
-    if (!driver || driver.closed) {
+    if (!driver || driver.isClosed()) {
       driver = await Directory.getHomeDB(this.memoryOnly, dbName, home);
-      this.sqliteDBs[dbName] = driver;
+      if (!this.memoryOnly) this.sqliteDBs[dbName] = driver;
     }
     return driver;
   }
@@ -179,7 +179,7 @@ export class Server extends stream.Duplex implements HookableServer {
     let driver: LevelUp = this.levelDBs[dbName];
     if (!driver || driver.isClosed()) {
       driver = await Directory.getHomeLevelDB(this.memoryOnly, dbName, home);
-      this.levelDBs[dbName] = driver;
+      if (!this.memoryOnly) this.levelDBs[dbName] = driver;
     }
     return driver;
   }
@@ -514,6 +514,12 @@ export class Server extends stream.Duplex implements HookableServer {
     if (this.dal) {
       await this.dal.close()
     }
+    await Promise.all(Object.values(this.sqliteDBs)
+        .filter(db => db && !db.isClosed())
+        .map(db => db.closeConnection()));
+    await Promise.all(Object.values(this.levelDBs)
+        .filter(db => db && !db.isClosed())
+        .map(db => db.close()));
   }
 
   revert() {

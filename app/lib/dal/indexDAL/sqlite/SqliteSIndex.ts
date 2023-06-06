@@ -46,8 +46,6 @@ export class SqliteSIndex extends SqliteTable<SindexEntry>
 
   cleanCache(): void {}
 
-  triggerInit(): void {}
-
   /**
    * INSERT
    */
@@ -106,7 +104,7 @@ export class SqliteSIndex extends SqliteTable<SindexEntry>
   private async find(sql: string, params: any[]): Promise<SindexEntry[]> {
     return (await this.driver.sqlRead(sql, params)).map((r) => {
       return {
-        index: "CINDEX",
+        index: "SINDEX",
         op: r.op,
         written_on: r.written_on,
         writtenOn: r.writtenOn,

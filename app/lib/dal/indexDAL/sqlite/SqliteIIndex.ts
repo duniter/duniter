@@ -44,8 +44,6 @@ export class SqliteIIndex extends SqliteTable<IindexEntry>
 
   cleanCache(): void {}
 
-  triggerInit(): void {}
-
   /**
    * INSERT
    */

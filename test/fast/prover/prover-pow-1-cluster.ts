@@ -111,7 +111,7 @@ describe('PoW Cluster', () => {
         }
       }
     })
-    await new Promise(res => {
+    await new Promise<void>(res => {
       master.onInfoMessage = () => res()
     })
     await master.cancelWork()

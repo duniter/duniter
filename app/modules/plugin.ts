@@ -14,7 +14,7 @@
 import { ConfDTO } from "../lib/dto/ConfDTO";
 import { Server } from "../../server";
 
-"use strict";
+("use strict");
 
 const fs = require("fs");
 const path = require("path");
@@ -86,7 +86,7 @@ function npmInstall(
   npm: string | null = null,
   cwd: string | null = null
 ) {
-  return new Promise((res, rej) => {
+  return new Promise<void>((res, rej) => {
     const node = getNode();
     npm = npm || getNPM();
     cwd = cwd || getCWD();
@@ -117,7 +117,7 @@ function npmRemove(
   npm: string | null = null,
   cwd: string | null = null
 ) {
-  return new Promise((res, rej) => {
+  return new Promise<void>((res, rej) => {
     const node = getNode();
     npm = npm || getNPM();
     cwd = cwd || getCWD();
@@ -167,7 +167,7 @@ async function checkNPMAccess() {
 }
 
 async function getNPMAccess() {
-  const hasAccessToPackageJSON = await new Promise((res) => {
+  const hasAccessToPackageJSON = await new Promise<boolean>((res) => {
     fs.access(
       path.join(__dirname, "/../../package.json"),
       fs.constants.R_OK | fs.constants.W_OK,
@@ -176,7 +176,7 @@ async function getNPMAccess() {
       }
     );
   });
-  const hasAccessToNodeModules = await new Promise((res) => {
+  const hasAccessToNodeModules = await new Promise<boolean>((res) => {
     fs.access(
       path.join(__dirname, "/../../node_modules"),
       fs.constants.R_OK | fs.constants.W_OK,

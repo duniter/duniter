@@ -23,8 +23,6 @@ export class SqliteWallet extends SqliteTable<DBWallet> implements WalletDAO {
 
   cleanCache(): void {}
 
-  triggerInit(): void {}
-
   /**
    * INSERT
    */

@@ -12,7 +12,7 @@
 // GNU Affero General Public License for more details.
 
 export function newRejectTimeoutPromise(timeout: number) {
-  return new Promise((res, rej) => {
+  return new Promise<void>((res, rej) => {
     setTimeout(rej, timeout);
   });
 }
@@ -21,7 +21,7 @@ export function newResolveTimeoutPromise<T>(
   timeout: number,
   value: T
 ): Promise<T> {
-  return new Promise((res) => {
+  return new Promise<T>((res) => {
     setTimeout(() => res(value), timeout);
   });
 }

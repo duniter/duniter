@@ -35,8 +35,6 @@ export class SqliteDividend extends SqliteTable<DividendEntry>
 
   cleanCache(): void {}
 
-  triggerInit(): void {}
-
   /**
    * INSERT
    */

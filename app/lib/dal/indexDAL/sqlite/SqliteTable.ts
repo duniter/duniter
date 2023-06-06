@@ -4,7 +4,7 @@ import { SqliteNodeIOManager } from "./SqliteNodeIOManager";
 import { SQLiteDriver } from "../../drivers/SQLiteDriver";
 
 export class SqliteTable<T> {
-  private readonly pdriver: Promise<SQLiteDriver>;
+  private readonly _driverPromise: Promise<SQLiteDriver>;
   protected driver: SqliteNodeIOManager<T>;
 
   protected constructor(
@@ -14,11 +14,11 @@ export class SqliteTable<T> {
     },
     getSqliteDB: (dbName: string) => Promise<SQLiteDriver>
   ) {
-    this.pdriver = getSqliteDB(`${name}.db`);
+    this._driverPromise = getSqliteDB(`${name}.db`);
   }
 
   async init(): Promise<void> {
-    this.driver = new SqliteNodeIOManager(await this.pdriver, "sindex");
+    this.driver = new SqliteNodeIOManager(await this._driverPromise, this.name);
     await this.driver.sqlExec(`
     BEGIN;
     ${this.generateCreateTable()};
@@ -32,11 +32,20 @@ export class SqliteTable<T> {
     await this.driver.close();
   }
 
+  async disableCheckConstraints(): Promise<void> {
+    await this.driver.sqlExec("PRAGMA ignore_check_constraints = true;");
+  }
+
+  async enableCheckConstraints(): Promise<void> {
+    await this.driver.sqlExec("PRAGMA ignore_check_constraints = false;");
+  }
+
   generateCreateTable() {
     let sql = `CREATE TABLE IF NOT EXISTS ${this.name} (`;
     const fields = this.keys()
-      .map((fieldName) => {
-        const f = this.fields[fieldName] as SqlFieldDefinition;
+      .map((key) => {
+        const fieldName = String(key);
+        const f = this.fields[key] as SqlFieldDefinition;
         switch (f.type) {
           case "BOOLEAN":
             return `\n${fieldName} BOOLEAN${f.nullable ? " NULL" : ""}`;
@@ -72,7 +81,9 @@ export class SqliteTable<T> {
     return this.keys()
       .filter((key) => this.fields[key]?.indexed)
       .map((fieldName) => {
-        return `CREATE INDEX IF NOT EXISTS idx_${this.name}_${fieldName} ON ${this.name} (${fieldName});\n`;
+        return `CREATE INDEX IF NOT EXISTS idx_${this.name}_${String(
+          fieldName
+        )} ON ${this.name} (${String(fieldName)});\n`;
       })
       .join("");
   }
@@ -93,12 +104,14 @@ export class SqliteTable<T> {
   ) {
     const valuesOfRecord = fieldsToUpdate
       .map(
-        (fieldName) => `${fieldName} = ${this.getFieldValue(fieldName, record)}`
+        (fieldName) =>
+          `${String(fieldName)} = ${this.getFieldValue(fieldName, record)}`
       )
       .join(",");
     const conditionsOfRecord = whereFields
       .map(
-        (fieldName) => `${fieldName} = ${this.getFieldValue(fieldName, record)}`
+        (fieldName) =>
+          `${String(fieldName)} = ${this.getFieldValue(fieldName, record)}`
       )
       .join(",");
     await driver.sqlWrite(
@@ -206,7 +219,9 @@ export class SqliteTable<T> {
   async countBy(fieldName: keyof T, fieldValue: any): Promise<number> {
     return ((
       await this.driver.sqlRead(
-        `SELECT COUNT(*) as max FROM ${this.name} WHERE ${fieldName} = ?`,
+        `SELECT COUNT(*) as max FROM ${this.name} WHERE ${String(
+          fieldName
+        )} = ?`,
         [fieldValue]
       )
     )[0] as any).max;

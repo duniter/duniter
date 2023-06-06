@@ -129,7 +129,7 @@ module.exports = {
             constants.NB_INITIAL_LINES_TO_SHOW
           );
           // Never ending command
-          return new Promise((res) => null);
+          return new Promise<void>((res) => null);
         },
       },
       {
@@ -159,7 +159,7 @@ module.exports = {
 
           logger.info(">> Server ready!");
 
-          return new Promise(() => null); // Never ending
+          return new Promise<void>(() => null); // Never ending
         },
       },
     ],
@@ -173,7 +173,7 @@ function ServerService(server: Server) {
 }
 
 function startDaemon(daemon: any) {
-  return new Promise((resolve, reject) =>
+  return new Promise<void>((resolve, reject) =>
     daemon.start((err: any) => {
       if (err) return reject(err);
       resolve();
@@ -182,7 +182,7 @@ function startDaemon(daemon: any) {
 }
 
 function stopDaemon(daemon: any) {
-  return new Promise((resolve, reject) =>
+  return new Promise<void>((resolve, reject) =>
     daemon.stop((err: any) => {
       err && console.error(err);
       if (err) return reject(err);

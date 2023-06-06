@@ -309,7 +309,11 @@ export const CrawlerDependency = {
                 ? [
                     {
                       endpoints: [
-                        [fromPort == "443" ? "BMAS" : "BASIC_MERKLED_API", fromHost, fromPort].join(" "),
+                        [
+                          fromPort == "443" ? "BMAS" : "BASIC_MERKLED_API",
+                          fromHost,
+                          fromPort,
+                        ].join(" "),
                       ],
                     },
                   ]
@@ -358,7 +362,11 @@ export const CrawlerDependency = {
           const { host, port } = extractHostPort(from);
           try {
             const peer = PeerDTO.fromJSONObject({
-              endpoints: [[port == "443" ? "BMAS" : "BASIC_MERKLED_API", host, port].join(" ")],
+              endpoints: [
+                [port == "443" ? "BMAS" : "BASIC_MERKLED_API", host, port].join(
+                  " "
+                ),
+              ],
             });
             const fromHost = peer.getHostPreferDNS();
             const fromPort = peer.getPort();
@@ -405,7 +413,11 @@ export const CrawlerDependency = {
           const { host, port } = extractHostPort(from);
           try {
             const peer = PeerDTO.fromJSONObject({
-              endpoints: [[port == "443" ? "BMAS" : "BASIC_MERKLED_API", host, port].join(" ")],
+              endpoints: [
+                [port == "443" ? "BMAS" : "BASIC_MERKLED_API", host, port].join(
+                  " "
+                ),
+              ],
             });
             const fromHost = peer.getHostPreferDNS();
             const fromPort = peer.getPort();
@@ -459,7 +471,11 @@ export const CrawlerDependency = {
           const { host: toHost, port: toPort } = extractHostPort(target);
           try {
             const peer = PeerDTO.fromJSONObject({
-              endpoints: [[port == "443" ? "BMAS" : "BASIC_MERKLED_API", host, port].join(" ")],
+              endpoints: [
+                [port == "443" ? "BMAS" : "BASIC_MERKLED_API", host, port].join(
+                  " "
+                ),
+              ],
             });
             logger.info("Looking at %s...", source);
             try {
@@ -508,7 +524,9 @@ export const CrawlerDependency = {
           const { host, port } = extractHostPort(source);
           try {
             const peer = PeerDTO.fromJSONObject({
-              endpoints: [[port == "443" ? "BMAS" : "BASIC_MERKLED_API"].join(" ")],
+              endpoints: [
+                [port == "443" ? "BMAS" : "BASIC_MERKLED_API"].join(" "),
+              ],
             });
             logger.info("Looking at %s...", source);
             try {
@@ -752,7 +770,11 @@ export const CrawlerDependency = {
                 ? [
                     {
                       endpoints: [
-                        [fromPort == "443" ? "BMAS" : "BASIC_MERKLED_API", fromHost, fromPort].join(" "),
+                        [
+                          fromPort == "443" ? "BMAS" : "BASIC_MERKLED_API",
+                          fromHost,
+                          fromPort,
+                        ].join(" "),
                       ],
                     },
                   ]

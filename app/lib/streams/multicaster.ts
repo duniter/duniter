@@ -267,7 +267,7 @@ export class Multicaster extends stream.Transform {
     if (!peer.isReachable()) {
       return Promise.resolve();
     }
-    return new Promise((resolve, reject) => {
+    return new Promise<any>((resolve, reject) => {
       const postReq = request.post(
         {
           uri: protocol(peer.getPort()) + "://" + peer.getURL() + uri,

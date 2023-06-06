@@ -129,8 +129,7 @@ export class FileDAL implements ServerDAO {
   sindexDAL: SIndexDAO;
   cindexDAL: CIndexDAO;
   dividendDAL: DividendDAO;
-  newDals: { [k: string]: Initiable };
-  private dals: (PeerDAO | WalletDAO | GenericDAO<any>)[];
+  dals: { [k: string]: Initiable };
 
   loadConfHook: (conf: ConfDTO) => Promise<void>;
   saveConfHook: (conf: ConfDTO) => Promise<ConfDTO>;
@@ -174,7 +173,7 @@ export class FileDAL implements ServerDAO {
     this.cindexDAL = new LevelDBCindex(getLevelDB);
     this.dividendDAL = new LevelDBDividend(getLevelDB);
 
-    this.newDals = {
+    this.dals = {
       powDAL: this.powDAL,
       metaDAL: this.metaDAL,
       blockDAL: this.blockDAL,
@@ -196,24 +195,9 @@ export class FileDAL implements ServerDAO {
 
   async init(conf: ConfDTO) {
     this.wotb = this.params.wotbf();
-    this.dals = [
-      this.blockDAL,
-      this.txsDAL,
-      this.peerDAL,
-      this.walletDAL,
-      this.bindexDAL,
-      this.mindexDAL,
-      this.iindexDAL,
-      this.sindexDAL,
-      this.cindexDAL,
-      this.dividendDAL,
-    ];
-    for (const indexDAL of this.dals) {
-      indexDAL.triggerInit();
-    }
-    const dalNames = Underscore.keys(this.newDals);
+    const dalNames = Underscore.keys(this.dals);
     for (const dalName of dalNames) {
-      const dal = this.newDals[dalName];
+      const dal = this.dals[dalName];
       await dal.init();
     }
     logger.debug("Upgrade database...");
@@ -227,6 +211,23 @@ export class FileDAL implements ServerDAO {
     ) {
       this.wotb.setMaxCert(currencyParams.sigStock);
     }
+  }
+
+  generateUpgradeSql() {
+    // Make sure to always renable constraints (a.g. if the last sync failed, it can be still disabled)
+    return "PRAGMA ignore_check_constraints = true;";
+  }
+
+  async disableCheckConstraints() {
+    logger.info("Disabling database check constraints...");
+    await this.metaDAL.exec("PRAGMA ignore_check_constraints = true;");
+    await this.txsDAL.disableCheckConstraints();
+  }
+
+  async enableCheckConstraints() {
+    logger.info("Enabling database check constraints...");
+    await this.metaDAL.exec("PRAGMA ignore_check_constraints = false;");
+    await this.txsDAL.enableCheckConstraints();
   }
 
   getDBVersion() {
@@ -1583,14 +1584,14 @@ export class FileDAL implements ServerDAO {
   }
 
   async cleanCaches() {
-    await Underscore.values(this.newDals).map(
+    await Underscore.values(this.dals).map(
       (dal: Initiable) => dal.cleanCache && dal.cleanCache()
     );
   }
 
   async close() {
     await Promise.all(
-      Underscore.values(this.newDals).map(async (dal: Initiable) => {
+      Underscore.values(this.dals).map(async (dal: Initiable) => {
         dal.cleanCache();
         await dal.close();
       })
@@ -1604,7 +1605,7 @@ export class FileDAL implements ServerDAO {
   }
 
   getLogContent(linesQuantity: number) {
-    return new Promise((resolve, reject) => {
+    return new Promise<string[]>((resolve, reject) => {
       try {
         let lines: string[] = [],
           i = 0;

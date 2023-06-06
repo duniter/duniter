@@ -90,7 +90,6 @@ export class GlobalIndexStream extends Duplex {
   private numberOfChunksToDownload: number;
   private memToCopyDone = false;
 
-
   constructor(
     private conf: ConfDTO,
     private dal: FileDAL,
@@ -123,12 +122,6 @@ export class GlobalIndexStream extends Duplex {
     this.memSyncInjection = (async () => {
       // Disabled function
     })();
-  }
-
-  private async injectLoki<T, K extends keyof T>(dal: T, f: K, obj: T[K]) {
-    // this.mapInjection[f] = dal[f]
-    // dal[f] = obj
-    // await (obj as any).triggerInit()
   }
 
   readChunk(i: number) {}
@@ -442,25 +435,25 @@ export class GlobalIndexStream extends Duplex {
       // if cautious, use a save (insert or update)
       if (this.cautious) {
         await Promise.all(
-            blocks.map((block) =>
-                this.dal.saveTxsInFiles(
-                    block.transactions,
-                    block.number,
-                    block.medianTime
-                )
+          blocks.map((block) =>
+            this.dal.saveTxsInFiles(
+              block.transactions,
+              block.number,
+              block.medianTime
             )
+          )
         );
       }
       // If not cautious: use insert only
       else {
         await Promise.all(
-            blocks.map((block) =>
-                this.dal.insertTxsInFiles(
-                    block.transactions,
-                    block.number,
-                    block.medianTime
-                )
+          blocks.map((block) =>
+            this.dal.insertTxsInFiles(
+              block.transactions,
+              block.number,
+              block.medianTime
             )
+          )
         );
       }
     }

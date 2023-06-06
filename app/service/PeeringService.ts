@@ -76,10 +76,9 @@ export class PeeringService {
   async mirrorBMAEndpoints() {
     const localPeer = await this.peer();
     const localEndpoints = await this.server.getEndpoints();
-    return this.getOtherEndpoints(
-      localPeer.endpoints,
-      localEndpoints
-    ).filter(PeerDTO.isBMA);
+    return this.getOtherEndpoints(localPeer.endpoints, localEndpoints).filter(
+      PeerDTO.isBMA
+    );
   }
 
   checkPeerSignature(p: PeerDTO) {
@@ -363,8 +362,8 @@ export class PeeringService {
       const ws2pAccess = PeerDTO.fromJSONObject(p2).getFirstNonTorWS2P();
       if (ws2pAccess) {
         logger.info(
-          `WS2P access: ${ws2pAccess.host}:${ws2pAccess.port}`
-          + (ws2pAccess.path ? (" " + ws2pAccess.path) : "")
+          `WS2P access: ${ws2pAccess.host}:${ws2pAccess.port}` +
+            (ws2pAccess.path ? " " + ws2pAccess.path : "")
         );
       }
       logger.debug(

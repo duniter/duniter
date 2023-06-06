@@ -260,7 +260,7 @@ export const NewTestingServer = (conf:any) => {
 }
 
 export const serverWaitBlock = async (server:Server, number:number) => {
-  await new Promise((res) => {
+  await new Promise<void>((res) => {
     const interval = setInterval(async () => {
       const current = await server.dal.getCurrentBlockOrNull()
       if (current && current.number == number) {
@@ -276,7 +276,7 @@ export const waitToHaveBlock = async (server:Server, number:number) => {
 }
 
 export const waitForkResolution = async (server:Server, number:number) => {
-  await new Promise(res => {
+  await new Promise<void>(res => {
     server.pipe(es.mapSync((e:any) => {
       if (e.bcEvent === 'switched' && e.block.number === number) {
         res()
@@ -288,7 +288,7 @@ export const waitForkResolution = async (server:Server, number:number) => {
 }
 
 export const waitForkWS2PConnection = async (server:Server, pubkey:string) => {
-  await new Promise(res => {
+  await new Promise<void>(res => {
     server.pipe(es.mapSync((e:any) => {
       if (e.ws2p === 'connected' && e.to.pubkey === pubkey) {
         res()
@@ -300,7 +300,7 @@ export const waitForkWS2PConnection = async (server:Server, pubkey:string) => {
 }
 
 export const waitForkWS2PDisconnection = async (server:Server, pubkey:string) => {
-  await new Promise(res => {
+  await new Promise<void>((res) => {
     server.pipe(es.mapSync((e:any) => {
       if (e.ws2p === 'disconnected' && e.peer.pub === pubkey) {
         res()
@@ -473,7 +473,7 @@ export class TestingServer {
   }
 
   push(chunk: any, encoding?: string) {
-    return this.server.push(chunk, encoding)
+    return this.server.push(chunk, encoding as BufferEncoding)
   }
 
   pipe(writable:stream.Writable) {
@@ -562,7 +562,7 @@ export class TestingServer {
 
   async commitWaitError(options:any, expectedError:string) {
     const results = await Promise.all([
-      new Promise(res => {
+      new Promise<void>((res) => {
         this.server.pipe(es.mapSync((e:any) => {
           if (e.blockResolutionError === expectedError) {
             res()

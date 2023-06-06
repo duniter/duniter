@@ -63,7 +63,7 @@ export const req2fwd = async (
       for (const received of idty.pendingCerts) {
         const cid = [received.from, iid].join("-");
         if (!certs[cid]) {
-          await new Promise((res) => setTimeout(res, 300));
+          await new Promise<void>((res) => setTimeout(res, 300));
           certs[cid] = received;
           const rawCert = rawer.getOfficialCertification({
             currency: "g1",

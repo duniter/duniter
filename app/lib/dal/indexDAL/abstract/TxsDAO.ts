@@ -4,6 +4,10 @@ import { SandBox } from "../../sqliteDAL/SandBox";
 import { DBTx } from "../../../db/DBTx";
 
 export interface TxsDAO extends GenericDAO<DBTx> {
+  disableCheckConstraints(): Promise<void>;
+
+  enableCheckConstraints(): Promise<void>;
+
   trimExpiredNonWrittenTxs(limitTime: number): Promise<void>;
 
   getAllPending(versionMin: number): Promise<DBTx[]>;

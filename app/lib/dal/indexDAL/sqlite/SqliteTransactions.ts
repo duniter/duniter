@@ -357,7 +357,7 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     while (i < hashArray.length - 1) {
       const slice = hashArray.slice(i, i + 500);
       await this.driver.sqlWrite(
-        `DELETE FROM txs WHERE hash IN (${slice.map((_) => "?").join(", ")})`,
+        `DELETE FROM txs WHERE hash IN (${slice.map((_) => "?").join(",")})`,
         slice
       );
       i += 500;
@@ -367,8 +367,6 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
   removeByHash(hash: string): Promise<void> {
     return this.driver.sqlWrite("DELETE FROM txs WHERE hash = ?", [hash]);
   }
-
-  triggerInit(): void {}
 
   trimExpiredNonWrittenTxs(limitTime: number): Promise<void> {
     return this.driver.sqlWrite(

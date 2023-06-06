@@ -381,6 +381,6 @@ export class PeerDTO implements Cloneable {
   }
 
   static isBMA(endpoint: string) {
-    return endpoint && !!endpoint.match(/^(BASIC_MERKLED_API|BMAS)/) || false;
+    return (endpoint && !!endpoint.match(/^(BASIC_MERKLED_API|BMAS)/)) || false;
   }
 }

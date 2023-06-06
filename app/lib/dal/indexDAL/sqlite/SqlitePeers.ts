@@ -95,8 +95,6 @@ export class SqlitePeers extends SqliteTable<DBPeer> implements PeerDAO {
     return peer;
   }
 
-  triggerInit(): void {}
-
   withUPStatus(): Promise<DBPeer[]> {
     return this.findEntities("SELECT * FROM peers WHERE status = ?", ["UP"]);
   }

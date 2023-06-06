@@ -20,6 +20,7 @@ import { parsers } from "../../../lib/common-libs/parsers/index";
 
 import { Server } from "../../../../server";
 import { Querable, querablep } from "../../../lib/common-libs/querable";
+import { BlockDTO } from "../../../lib/dto/BlockDTO";
 
 export class PermanentProver {
   logger: any;
@@ -29,12 +30,11 @@ export class PermanentProver {
   loops: number;
 
   private permanencePromise: Querable<void> | null = null;
-
-  private blockchainChangedResolver: any = null;
-  private promiseOfWaitingBetween2BlocksOfOurs: any = null;
-  private lastComputedBlock: any = null;
-  private resolveContinuePromise: any = null;
-  private continuePromise: any = null;
+  private blockchainChangedResolver: ((value: void) => void) | null = null;
+  private promiseOfWaitingBetween2BlocksOfOurs: Promise<void> | null = null;
+  private lastComputedBlock: BlockDTO | null = null;
+  private resolveContinuePromise: ((value: boolean) => void) | null = null;
+  private continuePromise: Promise<boolean> | null = null;
 
   constructor(private server: Server) {
     this.logger = server.logger;
@@ -44,7 +44,7 @@ export class PermanentProver {
 
     // Promises triggering the prooving lopp
     this.resolveContinuePromise = null;
-    this.continuePromise = new Promise(
+    this.continuePromise = new Promise<boolean>(
       (resolve) => (this.resolveContinuePromise = resolve)
     );
 
@@ -55,13 +55,13 @@ export class PermanentProver {
     if (!this.permanencePromise || this.permanencePromise.isFulfilled()) {
       this.startPermanence();
     }
-    this.resolveContinuePromise(true);
+    this.resolveContinuePromise && this.resolveContinuePromise(true);
   }
 
   async startPermanence() {
-    let permanenceResolve = () => {};
+    let permanenceResolve: (value: void) => void = () => {};
     this.permanencePromise = querablep(
-      new Promise((res) => {
+      new Promise<void>((res) => {
         permanenceResolve = res;
       })
     );
@@ -99,8 +99,8 @@ export class PermanentProver {
           this.checkTrialIsNotTooHigh(trial, current, selfPubkey);
           const lastIssuedByUs = current.issuer == selfPubkey;
           if (lastIssuedByUs && !this.promiseOfWaitingBetween2BlocksOfOurs) {
-            this.promiseOfWaitingBetween2BlocksOfOurs = new Promise((resolve) =>
-              setTimeout(resolve, theConf.powDelay)
+            this.promiseOfWaitingBetween2BlocksOfOurs = new Promise<void>(
+              (resolve) => setTimeout(resolve, theConf.powDelay)
             );
             this.logger.warn(
               "Waiting " +
@@ -126,15 +126,15 @@ export class PermanentProver {
             let cancelAlreadyTriggered = false;
 
             // The canceller
-            (async () => {
+            setTimeout(async () => {
               // If the blockchain changes
-              await new Promise(
+              await new Promise<void>(
                 (resolve) => (this.blockchainChangedResolver = resolve)
               );
               cancelAlreadyTriggered = true;
               // Then cancel the generation
               await this.prover.cancel();
-            })();
+            });
 
             let unsignedBlock = null,
               trial2 = 0;
@@ -165,11 +165,13 @@ export class PermanentProver {
                 );
               }
               try {
-                const obj = parsers.parseBlock.syncWrite(
-                  dos2unix(this.lastComputedBlock.getRawSigned())
-                );
+                const obj =
+                  this.lastComputedBlock &&
+                  parsers.parseBlock.syncWrite(
+                    dos2unix(this.lastComputedBlock.getRawSigned())
+                  );
                 await this.server.writeBlock(obj);
-                await new Promise((res) => {
+                await new Promise<void>((res) => {
                   this.server.once("bcEvent", () => res());
                 });
               } catch (err) {
@@ -201,7 +203,7 @@ export class PermanentProver {
           await Promise.race(
             waitingRaces.concat([
               // The blockchain has changed! We or someone else found a proof, we must make a gnu one
-              new Promise(
+              new Promise<void>(
                 (resolve) =>
                   (this.blockchainChangedResolver = () => {
                     this.logger.warn("Blockchain changed!");
@@ -210,7 +212,7 @@ export class PermanentProver {
               ),
 
               // Security: if nothing happens for a while, trigger the whole process again
-              new Promise((resolve) =>
+              new Promise<void>((resolve) =>
                 setTimeout(() => {
                   if (!raceDone) {
                     this.logger.warn(
@@ -251,10 +253,10 @@ export class PermanentProver {
     }
   }
 
-  async stopEveryting() {
+  async stopEverything() {
     // First: avoid continuing the main loop
-    this.resolveContinuePromise(true);
-    this.continuePromise = new Promise(
+    this.resolveContinuePromise && this.resolveContinuePromise(true);
+    this.continuePromise = new Promise<boolean>(
       (resolve) => (this.resolveContinuePromise = resolve)
     );
     // Second: stop any started proof

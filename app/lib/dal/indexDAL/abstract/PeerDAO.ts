@@ -2,11 +2,6 @@ import { DBPeer } from "../../../db/DBPeer";
 import { Initiable } from "../../sqliteDAL/Initiable";
 
 export interface PeerDAO extends Initiable {
-  /**
-   * Trigger the initialization of the DAO. Called when the underlying DB is ready.
-   */
-  triggerInit(): void;
-
   listAll(): Promise<DBPeer[]>;
 
   withUPStatus(): Promise<DBPeer[]>;

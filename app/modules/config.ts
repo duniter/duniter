@@ -93,10 +93,9 @@ module.exports = {
           const aggregates = Underscore.uniq(
             lines
               .map((l) => l.match(/: (\[\w+\](\[\w+\])*)/))
-              .filter((l) => l)
-              .map((l: string[]) => l[1])
+              .filter((l) => !!l)
+              .map((l) => l && ((l[1] as unknown) as string))
           );
-          console.log(aggregates);
           const results = aggregates.map((a: string) => {
             return {
               name: a,

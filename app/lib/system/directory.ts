@@ -95,8 +95,8 @@ class QioFileSystem implements FileSystem {
       }
     } else {
       // Use NodeJS streams for faster writing
-      let wstream = fs.createWriteStream(file);
-      await new Promise(async (res, rej) => {
+      const wstream = fs.createWriteStream(file);
+      await new Promise<void>(async (res, rej) => {
         // When done, return
         wstream.on("close", (err: any) => {
           if (err) return rej(err);

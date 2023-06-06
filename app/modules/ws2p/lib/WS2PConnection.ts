@@ -528,7 +528,7 @@ export class WS2PConnection {
         try {
           await Promise.race([
             connectionTimeout,
-            new Promise((resolve, reject) => {
+            new Promise<void>((resolve, reject) => {
               (async () => {
                 await this.onWsOpened;
                 try {
@@ -737,7 +737,7 @@ export class WS2PConnection {
   async request(body: WS2PRequest) {
     await this.connectAsInitiator();
     const uuid = nuuid.v4();
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this.nbRequestsCount++;
       this.ws.send(
         JSON.stringify({
@@ -761,7 +761,7 @@ export class WS2PConnection {
               extras,
               Promise.race([
                 // The answer
-                new Promise((res, rej) => {
+                new Promise<void>((res, rej) => {
                   extras.resolve = res;
                   extras.reject = () => {
                     this.errorDetected(WS2P_ERR.REQUEST_FAILED);
@@ -827,7 +827,7 @@ export class WS2PConnection {
 
   async pushData(type: WS2P_PUSH, key: string, data: any) {
     await this.connectAsInitiator();
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this.nbPushsToRemoteCount++;
       try {
         this.ws.send(

@@ -74,7 +74,7 @@ export class ValidatorStream extends Readable {
               }
             } catch (e) {
               failures++;
-              await new Promise((res) => setTimeout(res, 3000));
+              await new Promise<void>((res) => setTimeout(res, 3000));
               if (failures >= 15) {
                 NewLogger().error(
                   "Could not get a validation from remote blockchain after %s trials. Stopping sync.",

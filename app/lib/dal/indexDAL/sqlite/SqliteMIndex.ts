@@ -74,8 +74,6 @@ export class SqliteMIndex extends SqliteTable<MindexEntry>
     `);
   }
 
-  triggerInit(): void {}
-
   /**
    * INSERT
    */

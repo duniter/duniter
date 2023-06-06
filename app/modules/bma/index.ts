@@ -89,7 +89,11 @@ export const BmaDependency = {
     },
 
     config: {
-      onLoading: async (conf: NetworkConfDTO, program: any, logger: any) => {
+      onLoading: async (
+        conf: Partial<NetworkConfDTO>,
+        program: any,
+        logger: any
+      ) => {
         // If the usage of BMA hasn't been defined yet
         if (conf.nobma === undefined) {
           // Do we have an existing BMA conf?
@@ -186,7 +190,7 @@ export const BmaDependency = {
         }
       },
 
-      beforeSave: async (conf: NetworkConfDTO, program: any) => {
+      beforeSave: async (conf: Partial<NetworkConfDTO>, program: any) => {
         if (!conf.ipv4) delete conf.ipv4;
         if (!conf.ipv6) delete conf.ipv6;
         if (!conf.remoteipv4) delete conf.remoteipv4;
@@ -212,9 +216,7 @@ export const BmaDependency = {
           }
         }
         if (!conf.nobma) {
-          server.addEndpointsDefinitions(async () =>
-            getEndpoint(conf)
-          );
+          server.addEndpointsDefinitions(async () => getEndpoint(conf));
           server.addWrongEndpointFilter((endpoints: string[]) =>
             getWrongEndpoints(endpoints, server.conf.pair.pub)
           );
@@ -246,10 +248,14 @@ async function getWrongEndpoints(endpoints: string[], selfPubkey: string) {
       .map(async (ep: string) => {
         const peer = PeerDTO.fromJSONObject({ endpoints: [ep] });
         try {
-          const protocol = ep.startsWith("BMAS") || peer.getPort() == 443 ? "https" : "http";
-          const answer = await rp(protocol + "://" + peer.getURL() + "/network/peering", {
-            json: true,
-          });
+          const protocol =
+            ep.startsWith("BMAS") || peer.getPort() == 443 ? "https" : "http";
+          const answer = await rp(
+            protocol + "://" + peer.getURL() + "/network/peering",
+            {
+              json: true,
+            }
+          );
           if (!answer || answer.pubkey != selfPubkey) {
             throw Error("Not same pubkey as local instance");
           }
@@ -257,7 +263,7 @@ async function getWrongEndpoints(endpoints: string[], selfPubkey: string) {
           wrongs.push(ep);
         }
       })
-    );
+  );
   return wrongs;
 }
 

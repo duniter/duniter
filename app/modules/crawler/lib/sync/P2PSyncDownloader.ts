@@ -136,7 +136,11 @@ export class P2PSyncDownloader extends ASyncDownloader
    * @param count The number of blocks to download.
    * @param chunkIndex The # of the chunk in local algorithm (logging purposes only)
    */
-  private async p2pDownload(from: number, count: number, chunkIndex: number) {
+  private async p2pDownload(
+    from: number,
+    count: number,
+    chunkIndex: number
+  ): Promise<BlockDTO[]> {
     // if this chunk has already been downloaded before, we exclude its supplier node from the download list as it won't give correct answer now
     const lastSupplier = this.downloads[chunkIndex];
     if (lastSupplier) {
@@ -148,14 +152,14 @@ export class P2PSyncDownloader extends ASyncDownloader
     const candidates = await this.getP2Pcandidates(chunkIndex);
     // Book the nodes
     this.watcher.gettingChunk(chunkIndex, candidates);
-    return await this.raceOrCancelIfTimeout(
+    return await this.raceOrCancelIfTimeout<BlockDTO[]>(
       this.MAX_DELAY_PER_DOWNLOAD,
       candidates.map(async (node) => {
         try {
           this.handler[chunkIndex] = node;
           this.nbDownloading++;
           this.watcher.writeStatus(
-            "Getting chunck #" +
+            "Getting chunk #" +
               chunkIndex +
               "/" +
               (this.numberOfChunksToDownload - 1) +
@@ -166,10 +170,10 @@ export class P2PSyncDownloader extends ASyncDownloader
               " on peer " +
               node.hostName
           );
-          let blocks = await node.downloadBlocks(count, from);
+          let blocks = (await node.downloadBlocks(count, from)) || [];
           this.watcher.gotChunk(chunkIndex, node);
           this.watcher.writeStatus(
-            "GOT chunck #" +
+            "GOT chunk #" +
               chunkIndex +
               "/" +
               (this.numberOfChunksToDownload - 1) +
@@ -226,7 +230,7 @@ export class P2PSyncDownloader extends ASyncDownloader
           throw Error(DataErrors[DataErrors.NO_NODE_FOUND_TO_DOWNLOAD_CHUNK]);
         }
       }
-      await new Promise((res) => setTimeout(res, 1000)); // Wait 1s before retrying
+      await new Promise<void>((res) => setTimeout(res, 1000)); // Wait 1s before retrying
       return this.downloadChunk(index);
     }
   }
@@ -237,11 +241,11 @@ export class P2PSyncDownloader extends ASyncDownloader
    * @param races
    * @returns {Promise}
    */
-  private raceOrCancelIfTimeout(timeout: number, races: any[]) {
+  private raceOrCancelIfTimeout<T = any>(timeout: number, races: Promise<T>[]) {
     return Promise.race(
       [
         // Process the race, but cancel it if we don't get an anwser quickly enough
-        new Promise((resolve, reject) => {
+        new Promise<T>((resolve, reject) => {
           setTimeout(() => {
             reject(this.TOO_LONG_TIME_DOWNLOAD);
           }, timeout);

@@ -83,32 +83,44 @@ export class P2pCandidate {
     return (this.api && this.api.hostName) || "NO_API";
   }
 
-  async downloadBlocks(count: number, from: number) {
+  async downloadBlocks(count: number, from: number): Promise<BlockDTO[]> {
     const start = Date.now();
-    let error: Error | undefined;
     this.reserved = false;
-    this.dlPromise = querablep(
+    const promise = querablep(
       (async () => {
         // We try to download the blocks
-        let blocks: BlockDTO[] | null;
-        try {
-          blocks = await (this.api as IRemoteContacter).getBlocks(count, from);
-        } catch (e) {
-          // Unfortunately this can fail
-          blocks = null;
-          error = e;
+        let blocks: BlockDTO[] = [];
+        let tries = 5;
+        while (tries > 0) {
+          try {
+            blocks = await (this.api as IRemoteContacter).getBlocks(
+              count,
+              from
+            );
+          } catch (e) {
+            // Unfortunately this can fail
+            blocks = [];
+            this.logger.error(e);
+          }
+          if (blocks.length != count) {
+            this.logger.error("Wrong number of blocks from %s", this.hostName);
+            tries--;
+          } else {
+            break;
+          }
+        }
+        if (!blocks || blocks.length != count) {
+          throw new Error("Wrong number of blocks from " + this.hostName);
         }
         this.responseTimes.push(Date.now() - start);
         // Only keep a flow of 5 ttas for the node
         if (this.responseTimes.length > 5) this.responseTimes.shift();
         this.nbSuccess++;
-        if (error) {
-          throw error;
-        }
         return blocks;
       })()
     );
-    return this.dlPromise;
+    this.dlPromise = promise;
+    return promise;
   }
 
   private getRemoteAPIs() {

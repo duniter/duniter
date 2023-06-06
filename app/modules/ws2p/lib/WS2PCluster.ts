@@ -572,6 +572,7 @@ export class WS2PCluster {
     const canReachClearEndpoint = ProxiesConf.canReachClearEndpoint(
       this.server.conf.proxiesConf
     );
+    const isMember = await this.server.dal.isMember(this.server.conf.pair.pub);
     peers.sort((a, b) => {
       // Top priority at our own nodes
       if (
@@ -591,12 +592,14 @@ export class WS2PCluster {
       const aNumberOfFreeRooms = this.numberOfFreeRooms(
         a,
         canReachTorEndpoint,
-        canReachClearEndpoint
+        canReachClearEndpoint,
+        isMember
       );
       const bNumberOfFreeRooms = this.numberOfFreeRooms(
         b,
         canReachTorEndpoint,
-        canReachClearEndpoint
+        canReachClearEndpoint,
+        isMember
       );
 
       if (canReachTorEndpoint) {
@@ -740,7 +743,8 @@ export class WS2PCluster {
   private numberOfFreeRooms(
     p: PeerDTO,
     canReachTorEndpoint: boolean,
-    canReachClearEndpoint: boolean
+    canReachClearEndpoint: boolean,
+    isMember: boolean
   ) {
     const api = p.getOnceWS2PEndpoint(
       canReachTorEndpoint,
@@ -764,9 +768,7 @@ export class WS2PCluster {
               freeMemberRoom,
               freeMirorRoom,
             ]: string[] = messageV2.split(":");
-            return this.server.dal.isMember(this.server.conf.pair.pub)
-              ? freeMemberRoom
-              : freeMirorRoom;
+            return isMember ? freeMemberRoom : freeMirorRoom;
           }
         }
       }

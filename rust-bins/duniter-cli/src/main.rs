@@ -32,7 +32,6 @@ mod sync;
 
 use anyhow::{anyhow, Result};
 use daemonize_me::Daemon;
-#[cfg(target_arch = "x86_64")]
 use duniter_gva_conf::GvaCommand;
 use logwatcher::{LogWatcher, LogWatcherAction};
 use nix::{errno::Errno, sys::signal::Signal, unistd::Pid, Error};
@@ -82,7 +81,6 @@ enum DuniterCommand {
         after_help("Some advanced options are hidden for readability.")
     )]
     Config(Box<config::DuniterCoreConfigArgs>),
-    #[cfg(target_arch = "x86_64")]
     #[structopt(display_order(1))]
     Gva(GvaCommand),
     /// Launch the configuration wizard.
@@ -219,7 +217,6 @@ fn main() -> Result<()> {
         let log_level_filter = get_log_level(args.log)?;
         let profile_path = get_profile_path(args.profile.as_deref())?;
 
-        #[cfg(target_arch = "x86_64")]
         if let DuniterCommand::Gva(gva_command) = args.command {
             return gva_command.command(profile_path);
         }

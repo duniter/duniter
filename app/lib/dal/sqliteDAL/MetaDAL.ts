@@ -195,9 +195,7 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
     25: async () => {},
 
     // Drop old table 'txs' (replaced by a file 'txs.db')
-    26: async () => {
-      await this.exec("BEGIN;" + "DROP TABLE IF EXISTS txs;" + "COMMIT;");
-    },
+    26: "BEGIN;" + "DROP TABLE IF EXISTS txs;" + "COMMIT;",
 
     // Add columns 'issuer' and 'recipient' in transaction table - see issue #1442
     27: async () => {
@@ -215,8 +213,6 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
           "DROP INDEX IF EXISTS idx_txs_received;" +
           "DROP INDEX IF EXISTS idx_txs_output_base;" +
           "DROP INDEX IF EXISTS idx_txs_output_amount;" +
-          "CREATE INDEX IF NOT EXISTS idx_txs_issuers ON txs (issuers);" +
-          "CREATE INDEX IF NOT EXISTS idx_txs_recipients ON txs (recipients);" +
           "COMMIT;"
       );
 

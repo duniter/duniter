@@ -310,7 +310,8 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       const updateRecord = await this.getOrNull(updateKey);
       // Undo consumption
       if (updateRecord && updateRecord.writtenOn === writtenOn) {
-        conditions.push(updateRecord.conditions);
+        // Delete from condition index only if no createRecord exists - fix #1446
+        if (!createRecord) conditions.push(updateRecord.conditions);
         await this.del(updateKey);
       }
       // Undo creation?
@@ -318,11 +319,10 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
         conditions.push(createRecord.conditions);
         await this.del(createKey);
       }
-      // Update balance
-      // 1. Conditions
+      // Update condition index
       const uniqConditions = Underscore.uniq(conditions);
       for (const condition of uniqConditions) {
-        // Remove this source from the balance
+        // Remove this source from the condition
         await this.trimConditions(condition, id);
       }
     }
@@ -346,7 +346,7 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       // If some sources are left for this "condition", persist what remains
       await this.indexForConditions.put(condition, trimmed);
     } else {
-      // Otherwise just delete the "account"
+      // Otherwise just delete the "condition"
       await this.indexForConditions.del(condition);
     }
 

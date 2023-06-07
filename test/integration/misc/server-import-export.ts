@@ -59,7 +59,7 @@ describe('Import/Export', () => {
     const archive = await s1.exportAllDataAsZIP();
     const output = require('fs').createWriteStream(s1.home + '/export.zip');
     archive.pipe(output);
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       archive.on('error', reject);
       output.on('close', function() {
         resolve();

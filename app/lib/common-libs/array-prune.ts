@@ -12,7 +12,7 @@ export function arrayPruneAll<T>(array: T[], value: T) {
 }
 
 /**
- * Returs a copy of given array WITHOUT any record of `value`.
+ * Return a copy of given array WITHOUT any record of `value`.
  * @param original The array we want records, with `value` being excluded.
  * @param value The value we don't want to see in our copy array.
  */

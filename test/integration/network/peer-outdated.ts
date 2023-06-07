@@ -90,7 +90,7 @@ describe("Peer document expiry", function() {
 
   it('routing V1 peer document should raise an "outdated" event', async () => {
     const caster = new Multicaster();
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       caster
         .pipe(es.mapSync((obj:any) => {
           obj.should.have.property("outdated").equal(true);

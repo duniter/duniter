@@ -11,33 +11,31 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import { DEFAULT_ENCODING } from "crypto";
-import { WS2PServer } from "./WS2PServer";
-import { Server } from "../../../../server";
-import { WS2PClient } from "./WS2PClient";
-import { WS2PConnection } from "./WS2PConnection";
-import { randomPick } from "../../../lib/common-libs/randomPick";
-import { CrawlerConstants } from "../../crawler/lib/constants";
-import { WS2PBlockPuller } from "./WS2PBlockPuller";
-import { WS2PDocpoolPuller } from "./WS2PDocpoolPuller";
-import { WS2PConstants } from "./constants";
-import { PeerDTO, WS2PEndpoint } from "../../../lib/dto/PeerDTO";
-import { GlobalFifoPromise } from "../../../service/GlobalFifoPromise";
-import { OtherConstants } from "../../../lib/other_constants";
-import { Key } from "../../../lib/common-libs/crypto/keyring";
-import { verify } from "../../../../neon/lib";
-import { WS2PServerMessageHandler } from "./interface/WS2PServerMessageHandler";
-import { WS2PMessageHandler } from "./impl/WS2PMessageHandler";
-import { CommonConstants } from "../../../lib/common-libs/constants";
-import { Package } from "../../../lib/common/package";
-import { ProverConstants } from "../../prover/lib/constants";
-import { ProxiesConf } from "../../../lib/proxy";
-import { Underscore } from "../../../lib/common-libs/underscore";
-import { NewLogger } from "../../../lib/logger";
+import {WS2PServer} from "./WS2PServer";
+import {Server} from "../../../../server";
+import {WS2PClient} from "./WS2PClient";
+import {WS2PConnection} from "./WS2PConnection";
+import {randomPick} from "../../../lib/common-libs/randomPick";
+import {CrawlerConstants} from "../../crawler/lib/constants";
+import {WS2PBlockPuller} from "./WS2PBlockPuller";
+import {WS2PDocpoolPuller} from "./WS2PDocpoolPuller";
+import {WS2PConstants} from "./constants";
+import {PeerDTO, WS2PEndpoint} from "../../../lib/dto/PeerDTO";
+import {GlobalFifoPromise} from "../../../service/GlobalFifoPromise";
+import {OtherConstants} from "../../../lib/other_constants";
+import {Key} from "../../../lib/common-libs/crypto/keyring";
+import {verify} from "../../../../neon/lib";
+import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler";
+import {WS2PMessageHandler} from "./impl/WS2PMessageHandler";
+import {CommonConstants} from "../../../lib/common-libs/constants";
+import {Package} from "../../../lib/common/package";
+import {ProverConstants} from "../../prover/lib/constants";
+import {ProxiesConf} from "../../../lib/proxy";
+import {Underscore} from "../../../lib/common-libs/underscore";
+import {NewLogger} from "../../../lib/logger";
 
 const es = require("event-stream");
 const nuuid = require("node-uuid");
-const logger = NewLogger();
 
 export interface WS2PHead {
   message: string;

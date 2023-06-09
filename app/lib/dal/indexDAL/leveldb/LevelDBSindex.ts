@@ -175,8 +175,9 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     let belowNumberIds: string[] = [];
     const mapIds: {
       [k: string]: {
+        createdOn: number;
+        updatedOn: number;
         conditions: string;
-        writtenOn: number;
       };
     } = {};
     const mapIds2WrittenOn: { [k: string]: number } = {};
@@ -199,17 +200,19 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       // Remove consumed sources
       const identifier = id.split("-")[0];
       const pos = pint(id.split("-")[1]);
-      const entry = await this.getOrNull(
-        LevelDBSindex.trimKey(identifier, pos, true)
-      );
-      if (entry && entry.writtenOn < belowNumber) {
+      const createKey = LevelDBSindex.trimKey(identifier, pos, false);
+      const createRecord = await this.getOrNull(createKey);
+      const updateKey = LevelDBSindex.trimKey(identifier, pos, true);
+      const updateRecord = await this.getOrNull(updateKey);
+      if (createRecord && updateRecord && updateRecord.writtenOn < belowNumber) {
         // We remember the trimmed source id to remove it from the writtenOn and conditions index
         mapIds[id] = {
-          writtenOn: mapIds2WrittenOn[id],
-          conditions: entry.conditions,
+          createdOn: createRecord.writtenOn,
+          updatedOn: updateRecord.writtenOn,
+          conditions: updateRecord.conditions,
         };
-        await this.del(LevelDBSindex.trimKey(identifier, pos, false));
-        await this.del(LevelDBSindex.trimKey(identifier, pos, true));
+        await this.del(createKey);
+        await this.del(updateKey);
       }
     }
 
@@ -217,8 +220,9 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     for (const id of Underscore.keys(mapIds).map(String)) {
       const map = mapIds[id];
       await this.trimConditions(map.conditions, id);
-      await this.trimConsumed(map.writtenOn, id);
-      await this.trimWrittenOn(map.writtenOn, id);
+      await this.trimConsumed(map.updatedOn, id);
+      await this.trimWrittenOn(map.createdOn, id);
+      await this.trimWrittenOn(map.updatedOn, id);
     }
   }
 

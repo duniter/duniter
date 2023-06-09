@@ -120,8 +120,8 @@ describe("Triming", function(){
     await dal.sindexDAL.insertBatch([
       { op: 'CREATE', identifier: 'SOURCE_1', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'COND(SOURCE_1)'},
       { op: 'UPDATE', identifier: 'SOURCE_1', pos: 4, written_on: '139-H', writtenOn: 139, written_time: 4500, consumed: true, conditions: 'COND(SOURCE_1)'},
-      { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'COND(SOURCE_2)'},
-      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(PUB_1)'}
+      { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '127-H', writtenOn: 127, written_time: 2500, consumed: false, conditions: 'COND(SOURCE_2)'},
+      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '127-H', writtenOn: 127, written_time: 2500, consumed: false, conditions: 'SIG(PUB_1)'}
     ] as any);
     (await dal.sindexDAL.findByIdentifier('SOURCE_1')).should.have.length(2);
     (await dal.sindexDAL.getAvailableForConditions('COND(SOURCE_2)')).should.have.length(1);
@@ -142,11 +142,12 @@ describe("Triming", function(){
 
     // Check internal index
     // FIXME another issue here
-    /*for (let index of sindexDAL.getInternalIndexes()) {
-      const res = await index.findAllKeys();
-      res.should.not.containEql("COND(SOURCE_1)")
-      res.should.not.containEql("0000000126")
-    }*/
+    for (let index of sindexDAL.getInternalIndexes()) {
+      const keys = await index.findAllKeys();
+      keys.should.not.containEql("COND(SOURCE_1)");
+      keys.should.not.containEql("0000000126");
+      keys.should.not.containEql("0000000139");
+    }
 
     // Now we consume all sources
     await dal.sindexDAL.insertBatch([

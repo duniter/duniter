@@ -130,24 +130,40 @@ describe("Triming", function(){
   })
 
   it('should be able to trim the sindex', async () => {
-    // Triming
+    const sindexDAL = dal.sindexDAL as LevelDBSindex;
+
+    // First triming before b#140 => should kept some sources
     await dal.trimIndexes(140);
     (await dal.sindexDAL.findByIdentifier('SOURCE_1')).should.have.length(0);
     (await dal.sindexDAL.getAvailableForConditions('COND(SOURCE_1)')).should.have.length(0);
+    (await dal.sindexDAL.getAvailableForConditions('COND(SOURCE_2)')).should.have.length(1);
     (await dal.sindexDAL.getAvailableForPubkey('PUB_1')).should.have.length(1);
     (await dal.sindexDAL.findByPos(4)).should.have.length(2);
 
-    // Consumed all, then trim again. => All sub indices should be empty
+    // Check internal index
+    // FIXME another issue here
+    /*for (let index of sindexDAL.getInternalIndexes()) {
+      const res = await index.findAllKeys();
+      res.should.not.containEql("COND(SOURCE_1)")
+      res.should.not.containEql("0000000126")
+    }*/
+
+    // Now we consume all sources
     await dal.sindexDAL.insertBatch([
       { op: 'UPDATE', identifier: 'SOURCE_2', pos: 4, written_on: '140-H', writtenOn: 140, written_time: 5000, consumed: true, conditions: 'COND(SOURCE_2)'},
       { op: 'UPDATE', identifier: 'SOURCE_3', pos: 4, written_on: '140-H', writtenOn: 140, written_time: 5000, consumed: true, conditions: 'SIG(PUB_1)'}
     ] as any);
+
+    // Second triming => should remove all sources
     await dal.trimIndexes(141);
-    if (dal.sindexDAL instanceof LevelDBSindex) {
-      for (let index of dal.sindexDAL.getInternalIndexes()) {
-        const res = await index.findAllKeys();
-        res.should.have.length(0, `index ${index['name']} should have been trimmed`);
-      }
+    (await dal.sindexDAL.getAvailableForConditions('COND(SOURCE_2)')).should.have.length(0);
+    (await dal.sindexDAL.getAvailableForPubkey('PUB_1')).should.have.length(0);
+    (await dal.sindexDAL.findByPos(4)).should.have.length(0);
+
+    // All sub index should be empty
+    for (let index of sindexDAL.getInternalIndexes()) {
+      const res = await index.findAllKeys();
+      res.should.have.length(0, `index ${index['name']} should have been trimmed`);
     }
   })
 

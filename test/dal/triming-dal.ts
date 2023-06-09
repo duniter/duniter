@@ -15,6 +15,7 @@ import {FileDAL} from "../../app/lib/dal/fileDAL"
 import {Directory} from "../../app/lib/system/directory"
 import {Indexer} from "../../app/lib/indexer"
 import {simpleNodeWith2Users} from "../integration/tools/toolbox"
+import {LevelDBSindex} from "../../app/lib/dal/indexDAL/leveldb/LevelDBSindex";
 
 const should = require('should');
 
@@ -135,6 +136,19 @@ describe("Triming", function(){
     (await dal.sindexDAL.getAvailableForConditions('COND(SOURCE_1)')).should.have.length(0);
     (await dal.sindexDAL.getAvailableForPubkey('PUB_1')).should.have.length(1);
     (await dal.sindexDAL.findByPos(4)).should.have.length(2);
+
+    // Consumed all, then trim again. => All sub indices should be empty
+    await dal.sindexDAL.insertBatch([
+      { op: 'UPDATE', identifier: 'SOURCE_2', pos: 4, written_on: '140-H', writtenOn: 140, written_time: 5000, consumed: true, conditions: 'COND(SOURCE_2)'},
+      { op: 'UPDATE', identifier: 'SOURCE_3', pos: 4, written_on: '140-H', writtenOn: 140, written_time: 5000, consumed: true, conditions: 'SIG(PUB_1)'}
+    ] as any);
+    await dal.trimIndexes(141);
+    if (dal.sindexDAL instanceof LevelDBSindex) {
+      for (let index of dal.sindexDAL.getInternalIndexes()) {
+        const res = await index.findAllKeys();
+        res.should.have.length(0, `index ${index['name']} should have been trimmed`);
+      }
+    }
   })
 
   it('should be able to trim the bindex', async () => {

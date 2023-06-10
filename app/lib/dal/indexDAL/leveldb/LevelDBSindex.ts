@@ -345,7 +345,16 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
    * Allow to get internal index, for unit test (see test triming-dal.ts)
    */
   getInternalIndexes(): LevelDBTable<any>[] {
-    return [this.indexForTrimming, this.indexForConditions, this.indexForConditions, this.indexOfComplexeConditionForPubkeys];
+    return [this.indexForTrimming, this.indexForConditions, this.indexForConsumed, this.indexOfComplexeConditionForPubkeys];
+  }
+  getIndexForTrimming(): LevelDBTable<any> {
+    return this.indexForTrimming
+  }
+  getIndexForConditions(): LevelDBTable<any> {
+    return this.indexForConditions
+  }
+  getIndexForConsumed(): LevelDBTable<any> {
+    return this.indexForConsumed
   }
 
   private async trimConditions(condition: string, id: string) {

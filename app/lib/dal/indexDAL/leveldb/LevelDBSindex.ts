@@ -16,9 +16,13 @@ import { CommonConstants } from "../../../common-libs/constants";
 
 export class LevelDBSindex extends LevelDBTable<SindexEntry>
   implements SIndexDAO {
+  // Remembers what sources (identifier-pos, e.g. E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855-0) were either created and/or consumed at a given block number
   private indexForTrimming: LevelDBTable<string[]>;
+  // Remembers what sources (identifier-pos, e.g. E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855-0) were consumed at a given block number
   private indexForConsumed: LevelDBTable<string[]>;
+  // Remembers what sources (identifier-pos, e.g. E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855-0) are involved in a simple condition (e.g. "SIG(pubkey)")
   private indexForConditions: LevelDBTable<string[]>;
+  // Remembers what sources (identifier-pos, e.g. E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855-0) are involved in a complex condition (e.g. "SIG(pubkey) OR CSV(1000)")
   private indexOfComplexeConditionForPubkeys: LevelDBTable<string[]>;
 
   constructor(protected getLevelDB: (dbName: string) => Promise<LevelUp>) {
@@ -171,6 +175,13 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     return entries;
   }
 
+  /**
+   * Trims (i.e. removes definitively) some sources from sindex.
+   * N.B: we only trim *consumed sources* because a source is exclusively a two entries operation: CREATE then UPDATE.
+   * So a source without UPDATE is not to be trimmed, because it has never been consumed.
+   * Looking into `indexForConsumed` is therefore an optimisation to avoid checking `CREATE` sources which cannot be trimmed.
+   * @param belowNumber Trim all the UPDATE sources written below `belowNumber` block.
+   */
   async trimConsumedSource(belowNumber: number): Promise<void> {
     let belowNumberIds: string[] = [];
     const mapIds: {
@@ -182,7 +193,7 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     } = {};
     const mapIds2WrittenOn: { [k: string]: number } = {};
 
-    // First: we look at what was written before `belowNumber`
+    // First: we look at what was consumed before `belowNumber`
     await this.indexForConsumed.readAllKeyValue(
       async (kv) => {
         belowNumberIds = belowNumberIds.concat(kv.value);
@@ -211,12 +222,13 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
           updatedOn: updateRecord.writtenOn,
           conditions: updateRecord.conditions,
         };
+        // Remove both the source CREATE (availability) and UPDATE (consumption) from sindex
         await this.del(createKey);
         await this.del(updateKey);
       }
     }
 
-    // We update indexes
+    // We update sub-indexes
     for (const id of Underscore.keys(mapIds).map(String)) {
       const map = mapIds[id];
       await this.trimConditions(map.conditions, id);

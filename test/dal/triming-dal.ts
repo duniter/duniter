@@ -145,7 +145,7 @@ describe("Triming", function(){
     should.not.exist(await sindexDAL.getIndexForConsumed().getOrNull("0000000139")); // The only consumption at this block was trimmed
     let entriesAt0000000126 = await sindexDAL.getIndexForTrimming().getOrNull("0000000126");
 
-    // FIXME another issue here
+    // https://git.duniter.org/nodes/typescript/duniter/-/issues/1447
     entriesAt0000000126.should.not.containEql('SOURCE_1-0000000004'); // This CREATE entry should have been trimmed
 
     let entriesAt0000000139 = await sindexDAL.getIndexForTrimming().getOrNull("0000000139");
@@ -166,6 +166,7 @@ describe("Triming", function(){
     // All sub index should be empty
     for (let index of sindexDAL.getInternalIndexes()) {
       const res = await index.findAllKeys();
+      // https://git.duniter.org/nodes/typescript/duniter/-/issues/1447
       res.should.have.length(0, `index ${index['name']} should have been trimmed`);
     }
   })

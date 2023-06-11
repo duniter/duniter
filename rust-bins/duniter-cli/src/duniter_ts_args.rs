@@ -82,7 +82,6 @@ pub(crate) fn gen_duniter_ts_args(
             gen_start_args(start_args, &mut duniter_ts_args);
             gen_webstart_args(webstart_args, &mut duniter_ts_args);
         }
-        #[cfg(target_arch = "x86_64")]
         DuniterCommand::Gva(_) => unreachable!(),
         DuniterCommand::Start(ref start_args) => {
             duniter_ts_args.push("direct_start".to_owned());

@@ -219,11 +219,12 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       // Add new columns 'issuer' and 'recipient'
       try {
         await txsDAL.exec(
-          "BEGIN;" +
-            "ALTER TABLE txs ADD COLUMN issuer VARCHAR(50) NULL;" +
+          "ALTER TABLE txs ADD COLUMN issuer VARCHAR(50) NULL;" +
             "ALTER TABLE txs ADD COLUMN recipient VARCHAR(50) NULL;" +
-            "UOPDATE txs SET issuer = SUBSTR(issuers, 2, LENGTH(issuers) - 4) WHERE issuer IS NULL AND issuers NOT LIKE '%,%';" +
-            "UOPDATE txs SET recipient = SUBSTR(recipients, 2, LENGTH(recipients) - 4) WHERE recipient IS NULL AND recipients NOT LIKE '%,%';" +
+            // SHOULD start transaction after ALTER TABLE, to avoid leaving a not closed transaction, if failed - close #1448
+            "BEGIN;" +
+            "UPDATE txs SET issuer = SUBSTR(issuers, 2, LENGTH(issuers) - 4) WHERE issuer IS NULL AND issuers NOT LIKE '%,%';" +
+            "UPDATE txs SET recipient = SUBSTR(recipients, 2, LENGTH(recipients) - 4) WHERE recipient IS NULL AND recipients NOT LIKE '%,%';" +
             "COMMIT;"
         );
       } catch (err) {

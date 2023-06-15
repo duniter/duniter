@@ -690,7 +690,6 @@ export class DuniterBlockchain {
     block.fork = true;
     try {
       // Saves the block (DAL)
-      block.wrong = false;
       await dal.saveSideBlock(block);
       logger.info(
         "SIDE Block #%s-%s added to the blockchain in %s ms",

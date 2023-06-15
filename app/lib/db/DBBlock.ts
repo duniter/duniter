@@ -48,7 +48,6 @@ export class DBBlock {
   UDTime: number;
   writtenOn: number;
   written_on: string;
-  wrong = false;
 
   constructor() {}
 

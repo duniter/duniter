@@ -1236,7 +1236,6 @@ export class FileDAL implements ServerDAO {
   }
 
   saveBlock(dbb: DBBlock) {
-    dbb.wrong = false;
     return this.blockDAL.saveBlock(dbb);
 
     // Since v1.8.7, saveTxsInFiles() should be call only if TX storage enabled, by the caller

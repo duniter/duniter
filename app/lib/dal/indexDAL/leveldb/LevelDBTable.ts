@@ -12,12 +12,13 @@ export class LevelDBTable<T> {
 
   cleanCache(): void {}
 
-  async close() {
-    await this.db.close();
-  }
-
   async init(): Promise<void> {
     this.db = await this.getLevelDB(`${this.name}`);
+    await this.db.open();
+  }
+
+  async close() {
+    await this.db?.close();
   }
 
   public async get(k: string): Promise<T> {

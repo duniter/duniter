@@ -215,7 +215,11 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       const createRecord = await this.getOrNull(createKey);
       const updateKey = LevelDBSindex.trimKey(identifier, pos, true);
       const updateRecord = await this.getOrNull(updateKey);
-      if (createRecord && updateRecord && updateRecord.writtenOn < belowNumber) {
+      if (
+        createRecord &&
+        updateRecord &&
+        updateRecord.writtenOn < belowNumber
+      ) {
         // We remember the trimmed source id to remove it from the writtenOn and conditions index
         mapIds[id] = {
           createdOn: createRecord.writtenOn,
@@ -357,16 +361,21 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
    * Allow to get internal index, for unit test (see test triming-dal.ts)
    */
   getInternalIndexes(): LevelDBTable<any>[] {
-    return [this.indexForTrimming, this.indexForConditions, this.indexForConsumed, this.indexOfComplexeConditionForPubkeys];
+    return [
+      this.indexForTrimming,
+      this.indexForConditions,
+      this.indexForConsumed,
+      this.indexOfComplexeConditionForPubkeys,
+    ];
   }
   getIndexForTrimming(): LevelDBTable<any> {
-    return this.indexForTrimming
+    return this.indexForTrimming;
   }
   getIndexForConditions(): LevelDBTable<any> {
-    return this.indexForConditions
+    return this.indexForConditions;
   }
   getIndexForConsumed(): LevelDBTable<any> {
-    return this.indexForConsumed
+    return this.indexForConsumed;
   }
 
   private async trimConditions(condition: string, id: string) {

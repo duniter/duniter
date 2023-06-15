@@ -23,10 +23,8 @@ export class NodeBinding extends AbstractController {
         version: this.server.version,
         forkWindowSize: this.server.conf.forksize,
         storage: {
-          transactions: this.server.conf.storage
-            ? this.server.conf.storage.transactions
-            : true, // true by default (see app/module/config.ts)
-          wotwizard: this.server.conf.storage?.wotwizard || false, // false by default (see app/module/config.ts)
+          transactions: this.server.conf.storage?.transactions !== false, // true by default
+          wotwizard: this.server.conf.storage?.wotwizard === true, // false by default
         },
       },
     };

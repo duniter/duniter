@@ -29,10 +29,15 @@ export class SQLiteDriver {
   getDB(): Promise<any> {
     if (!this.dbPromise) {
       this.dbPromise = (async () => {
-        this.logger.debug('Opening SQLite database "%s"...', this.path);
+        this.logger.trace('Opening SQLite database "%s"...', this.path);
+
         let sqlite = new sqlite3.Database(this.path);
         await new Promise<any>((resolve) => sqlite.once("open", resolve));
+
         // Database is opened
+        //this.logger.debug('Database "%s" opened', this.path);
+
+        // Trace SQL queries
         if (OtherConstants.SQL_TRACES) {
           sqlite.on("trace", (trace: any) => {
             this.logger.trace(trace);
@@ -116,9 +121,9 @@ export class SQLiteDriver {
       db.open; // For an unknown reason, we need this line.
     }
     await new Promise<void>((resolve, reject) => {
-      this.logger.debug('Closing SQLite database "%s"...', this.path);
+      this.logger.trace('Closing SQLite database "%s"...', this.path);
       db.on("close", () => {
-        this.logger.info('Database "%s" closed.', this.path);
+        //this.logger.info('Database "%s" closed.', this.path);
         this.dbPromise = null;
         resolve();
       });

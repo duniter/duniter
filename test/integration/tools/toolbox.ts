@@ -243,6 +243,11 @@ export const NewTestingServer = (conf:any) => {
     httpLogs: true,
     forksize: conf.forksize !== undefined ? conf.forksize : 3,
     nonWoTPeersLimit: CommonConstants.DEFAULT_NON_WOT_PEERS_LIMIT,
+    storage: {
+      transaction: true,
+      wotwizard: false,
+      ...conf.storage
+    }
   };
   if (conf.sigQty === undefined) {
     conf.sigQty = 1;

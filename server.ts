@@ -175,7 +175,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async getLevelDB(dbName: string, home: string) {
-    // Check in cach (useful to avoid migration task to create a new driver on the same DB file)
+    // Check in cache (useful to avoid migration task to create a new driver on the same DB file)
     let driver: LevelUp = this.levelDBs[dbName];
     if (!driver || driver.isClosed()) {
       driver = await Directory.getHomeLevelDB(this.memoryOnly, dbName, home);

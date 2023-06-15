@@ -422,18 +422,18 @@ export class GlobalIndexStream extends Duplex {
 
   @MonitorExecutionTime()
   private async beforeBlocks(blocks: BlockDTO[]) {
+    let newTxCount = 0;
     await this.dal.blockDAL.insertBatch(
       blocks.map((b) => {
-        txCount += b.transactions.length;
+        newTxCount += b.transactions.length;
         const block = DBBlock.fromBlockDTO(b);
         block.fork = false;
         return block;
       })
     );
 
-    if (this.conf.storage?.transactions) {
-      // if cautious, use a save (insert or update)
-      if (this.cautious) {
+    if (newTxCount && this.conf.storage?.transactions !== false) {
+      if (this.cautious || this.localNumber >= 0) {
         await Promise.all(
           blocks.map((block) =>
             this.dal.saveTxsInFiles(
@@ -443,9 +443,7 @@ export class GlobalIndexStream extends Duplex {
             )
           )
         );
-      }
-      // If not cautious: use insert only
-      else {
+      } else {
         await Promise.all(
           blocks.map((block) =>
             this.dal.insertTxsInFiles(
@@ -456,9 +454,9 @@ export class GlobalIndexStream extends Duplex {
           )
         );
       }
+      txCount += newTxCount;
+      logger.debug("Total tx count: %s", txCount);
     }
-
-    logger.debug("Total tx count: %s", txCount);
   }
 
   @MonitorExecutionTime()

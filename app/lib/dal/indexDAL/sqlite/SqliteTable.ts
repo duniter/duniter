@@ -22,14 +22,14 @@ export class SqliteTable<T> {
     await this.driver.sqlExec(`
     BEGIN;
     ${this.generateCreateTable()};
-    ${this.generateUpgradeSql()};
-    ${this.generateCreateIndexes()};
+    ${this.generateUpgradeSql()}
+    ${this.generateCreateIndexes()}
     COMMIT;
     `);
   }
 
   async close(): Promise<void> {
-    await this.driver.close();
+    await this.driver?.close();
   }
 
   async disableCheckConstraints(): Promise<void> {

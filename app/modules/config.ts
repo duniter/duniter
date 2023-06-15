@@ -37,22 +37,18 @@ module.exports = {
           CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS;
 
         // Transactions storage
+        conf.storage = conf.storage || {
+          transactions: false,
+          wotwizard: false,
+        };
         if (
           program.storeTxs ||
           (program.storeTxs === undefined && !conf.nobma)
         ) {
-          if (!conf.storage) {
-            conf.storage = { transactions: true, wotwizard: false };
-          } else {
-            conf.storage.transactions = true;
-          }
+          conf.storage.transactions = true;
         }
         if (program.storeWw) {
-          if (!conf.storage) {
-            conf.storage = { transactions: false, wotwizard: true };
-          } else {
-            conf.storage.wotwizard = true;
-          }
+          conf.storage.wotwizard = true;
         }
       },
       beforeSave: async (conf: ConfDTO) => {

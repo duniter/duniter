@@ -61,10 +61,10 @@ export class LevelDBIindex extends LevelDBTable<IindexEntry[]>
 
   async close(): Promise<void> {
     await super.close();
-    await this.indexForHash.close();
-    await this.indexForUid.close();
-    await this.indexForKick.close();
-    await this.indexForWrittenOn.close();
+    await this.indexForHash?.close();
+    await this.indexForUid?.close();
+    await this.indexForKick?.close();
+    await this.indexForWrittenOn?.close();
   }
 
   /**

@@ -9,6 +9,7 @@ import { DBTx } from "../../../db/DBTx";
 import { TxsDAO } from "../abstract/TxsDAO";
 import { SandBox } from "../../sqliteDAL/SandBox";
 import { TransactionDTO } from "../../../dto/TransactionDTO";
+import { Underscore } from "../../../common-libs/underscore";
 
 const constants = require("../../../constants");
 
@@ -112,17 +113,15 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
 
   @MonitorExecutionTime()
   async insertBatch(records: DBTx[]): Promise<void> {
-    if (records.length) {
-      return this.insertBatchInTable(this.driver, records);
-    }
+    if (!records.length) return;
+    return this.insertBatchInTable(this.driver, records);
   }
 
   @MonitorExecutionTime()
   async saveBatch(records: DBTx[]): Promise<void> {
-    if (records.length) {
-      await this.removeByHashBatch(records.map((t) => t.hash));
-      await this.insertBatch(records);
-    }
+    if (!records.length) return;
+    await this.removeByHashBatch(Underscore.uniq(records.map((t) => t.hash)));
+    return this.insertBatchInTable(this.driver, records);
   }
 
   sandbox: SandBox<{
@@ -352,16 +351,17 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
   }
 
   async removeByHashBatch(hashArray: string[]): Promise<void> {
-    let i = 0;
-    // Delete by slice of 500 items (because SQLite IN operator is limited)
-    while (i < hashArray.length - 1) {
-      const slice = hashArray.slice(i, i + 500);
-      await this.driver.sqlWrite(
-        `DELETE FROM txs WHERE hash IN (${slice.map((_) => "?").join(",")})`,
-        slice
-      );
-      i += 500;
-    }
+    // Delete by slice of 100 items (because SQLite IN operator is limited)
+    await Promise.all(
+      Underscore.range(0, hashArray.length, 100)
+        .map(
+          (start) =>
+            `DELETE FROM txs WHERE hash IN ('${hashArray
+              .slice(start, start + 100)
+              .join("', '")}')`
+        )
+        .map((sql) => this.driver.sqlWrite(sql, []))
+    );
   }
 
   removeByHash(hash: string): Promise<void> {

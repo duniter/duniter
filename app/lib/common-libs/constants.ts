@@ -548,6 +548,7 @@ export const CommonConstants = {
   MILESTONES_PER_PAGE: 50,
   CHUNK_PREFIX: "chunk_",
   BLOCKS_IN_MEMORY_MAX: 288 * 60, // 288 = 1 day
+  MAX_SQLITE_WRITE_PENDINGS: 200,
 
   MAX_AGE_OF_PEER_IN_BLOCKS: 200, // blocks
   INITIAL_DOWNLOAD_SLOTS: 1, // 1 peer

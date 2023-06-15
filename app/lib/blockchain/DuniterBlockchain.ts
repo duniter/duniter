@@ -319,13 +319,20 @@ export class DuniterBlockchain {
     await this.removeMembershipsFromSandbox(block, dal);
     // Compute to be revoked members
     await this.computeToBeRevoked(indexes.mindex, dal);
+
     // Delete eventually present transactions
-    await this.deleteTransactions(block, dal);
+    // NOT NEED => already done in saveTxsInFiles()
+    //await this.deleteTransactions(block, dal);
 
     await dal.trimSandboxes(block);
 
     // Saves the block (DAL)
     await dal.saveBlock(dbb);
+
+    // Save Transactions (DAL)
+    if (conf.storage?.transactions !== false) {
+      await dal.saveTxsInFiles(dbb.transactions, dbb.number, dbb.medianTime);
+    }
 
     // Save wot file
     if (!dal.fs.isMemoryOnly()) {
@@ -684,7 +691,7 @@ export class DuniterBlockchain {
     try {
       // Saves the block (DAL)
       block.wrong = false;
-      await dal.saveSideBlockInFile(block);
+      await dal.saveSideBlock(block);
       logger.info(
         "SIDE Block #%s-%s added to the blockchain in %s ms",
         block.number,

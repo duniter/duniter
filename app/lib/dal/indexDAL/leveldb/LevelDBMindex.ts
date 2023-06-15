@@ -52,9 +52,9 @@ export class LevelDBMindex extends LevelDBTable<MindexEntry[]>
 
   async close(): Promise<void> {
     await super.close();
-    await this.indexForExpiresOn.close();
-    await this.indexForRevokesOn.close();
-    await this.indexForWrittenOn.close();
+    await this.indexForExpiresOn?.close();
+    await this.indexForRevokesOn?.close();
+    await this.indexForWrittenOn?.close();
   }
 
   /**

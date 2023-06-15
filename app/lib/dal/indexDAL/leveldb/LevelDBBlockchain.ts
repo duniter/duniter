@@ -106,8 +106,10 @@ export class LevelDBBlockchain extends LevelDBTable<DBBlock>
 
   async close(): Promise<void> {
     await super.close();
-    await this.forks.close();
-    await Promise.all(this.indexers.map((i) => i.close()));
+    if (this.indexers.length) {
+      await this.forks.close();
+      await Promise.all(this.indexers.map((i) => i.close()));
+    }
   }
 
   /**

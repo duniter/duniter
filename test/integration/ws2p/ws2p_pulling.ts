@@ -74,7 +74,7 @@ describe("WS2P block pulling", function() {
     cluster2 = network.cluster2
   })
 
-  after(() => wss.close())
+  after(() => wss?.close())
 
   it('should have b#6 on s1, b#2 on s2', async () => {
     const currentS1 = await s1.BlockchainService.current()

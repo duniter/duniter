@@ -186,6 +186,10 @@ export class Synchroniser extends stream.Duplex {
       // Disable check constraints
       if (!cautious) await this.server.dal.disableCheckConstraints();
 
+      // Remove existing TX, because we will all download it again
+      // This is required to be able to insert, instead of save
+      if (fullSync) await this.dal.removeAllTxs();
+
       const milestonesStream = new ValidatorStream(
         localNumber,
         to,
@@ -228,7 +232,7 @@ export class Synchroniser extends stream.Duplex {
       this.watcher.storagePercent(100.0);
       this.watcher.appliedPercent(100.0);
 
-      this.server.dal.blockDAL.cleanCache();
+      await this.server.dal.cleanCaches();
 
       if (!cliprogram.nosbx) {
         //=======

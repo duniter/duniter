@@ -234,14 +234,6 @@ export class FileDAL implements ServerDAO {
     return this.metaDAL.getVersion();
   }
 
-  writeFileOfBlock(block: DBBlock) {
-    return this.blockDAL.saveBlock(block);
-  }
-
-  writeSideFileOfBlock(block: DBBlock) {
-    return this.blockDAL.saveSideBlock(block);
-  }
-
   listAllPeers() {
     return this.peerDAL.listAll();
   }
@@ -1243,12 +1235,16 @@ export class FileDAL implements ServerDAO {
     }
   }
 
-  async saveBlock(dbb: DBBlock) {
+  saveBlock(dbb: DBBlock) {
     dbb.wrong = false;
-    await Promise.all([
-      this.saveBlockInFile(dbb),
-      this.saveTxsInFiles(dbb.transactions, dbb.number, dbb.medianTime),
-    ]);
+    return this.blockDAL.saveBlock(dbb);
+
+    // Since v1.8.7, saveTxsInFiles() should be call only if TX storage enabled, by the caller
+    //await this.saveTxsInFiles(dbb.transactions, dbb.number, dbb.medianTime);
+  }
+
+  saveSideBlock(block: DBBlock) {
+    return this.blockDAL.saveSideBlock(block);
   }
 
   async generateIndexes(
@@ -1343,14 +1339,6 @@ export class FileDAL implements ServerDAO {
     return this.msDAL.savePendingMembership(ms);
   }
 
-  async saveBlockInFile(block: DBBlock) {
-    await this.writeFileOfBlock(block);
-  }
-
-  saveSideBlockInFile(block: DBBlock) {
-    return this.writeSideFileOfBlock(block);
-  }
-
   /**
    * Map tx DTO into DBtxs
    * @param txs
@@ -1399,9 +1387,14 @@ export class FileDAL implements ServerDAO {
     medianTime: number
   ): Promise<DBTx[]> {
     if (!txs.length) return [];
-    const dbTxs = await this.mapToDBTxs(txs, block_number, medianTime);
-    await this.txsDAL.insertBatch(dbTxs);
-    return dbTxs;
+    const records = await this.mapToDBTxs(txs, block_number, medianTime);
+    await this.txsDAL.insertBatch(records);
+    return records;
+  }
+
+  removeAllTxs() {
+    logger.debug("Removing all existing txs...");
+    return this.txsDAL.removeAll();
   }
 
   async merkleForPeers() {
@@ -1583,17 +1576,19 @@ export class FileDAL implements ServerDAO {
     }
   }
 
-  async cleanCaches() {
-    await Underscore.values(this.dals).map(
-      (dal: Initiable) => dal.cleanCache && dal.cleanCache()
+  cleanCaches() {
+    return Promise.all(
+      Underscore.values(this.dals)
+        .filter((dal: Initiable) => typeof dal.cleanCache === "function")
+        .map((dal: Initiable) => dal.cleanCache())
     );
   }
 
   async close() {
     await Promise.all(
-      Underscore.values(this.dals).map(async (dal: Initiable) => {
+      Underscore.values(this.dals).map((dal: Initiable) => {
         dal.cleanCache();
-        await dal.close();
+        return dal.close();
       })
     );
     await this.sqliteDriver.closeConnection();

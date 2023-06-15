@@ -13,7 +13,6 @@
 
 import * as levelup from "levelup";
 import { LevelUp } from "levelup";
-import { AbstractLevelDOWN, ErrorCallback } from "abstract-leveldown";
 import * as leveldown from "leveldown";
 import * as memdown from "memdown";
 

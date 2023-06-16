@@ -194,10 +194,7 @@ describe("Triming", function(){
     (await server.dal.bindexDAL.head(1)).should.have.property('number').equal(12);
     (await server.dal.bindexDAL.head(13)).should.have.property('number').equal(0);
 
-    // Fill bindex until requiredBindexSize * 2
-    for (let i = 0; i < requiredBindexSize; i++) {
-      await server.commit();
-    }
+    await server.commit();
     should.not.exists(await server.dal.bindexDAL.head(14)); // Trimed
 
     await server.closeCluster()

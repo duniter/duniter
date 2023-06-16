@@ -16,6 +16,7 @@ import {PeerDTO} from "../../app/lib/dto/PeerDTO"
 import {Directory} from "../../app/lib/system/directory"
 import {DBBlock} from "../../app/lib/db/DBBlock"
 import {Underscore} from "../../app/lib/common-libs/underscore"
+import {ConfDTO} from "../../app/lib/dto/ConfDTO";
 
 var should = require('should');
 var assert = require('assert');
@@ -102,15 +103,22 @@ var mocks = {
   }
 };
 
-let fileDAL:FileDAL
+let conf: ConfDTO;
+let fileDAL:FileDAL;
 
 describe("DAL", function(){
 
   before(async () => {
+    conf = ConfDTO.complete({
+      currency: "meta_brouzouf",
+      storage: {
+        transactions: true
+      }
+    });
     let params = await Directory.getHomeParams(true, 'db0');
     fileDAL = new FileDAL(params, async (name: string) => Directory.getHomeDB(true, name), async (name: string) => Directory.getHomeLevelDB(true, name));
-    await fileDAL.init({} as any);
-    return fileDAL.saveConf({ currency: "meta_brouzouf" } as any);
+    await fileDAL.init(conf);
+    return fileDAL.saveConf(conf);
   })
 
   after(() => {
@@ -155,7 +163,7 @@ describe("DAL", function(){
   });
 
   it('should be able to save a Block', async () => {
-    await fileDAL.saveBlock(Underscore.extend({ fork: false } as any, mocks.block0));
+    await fileDAL.saveBlock(Underscore.extend({ fork: false } as any, mocks.block0), conf);
     let block = (await fileDAL.getFullBlockOf(0)) as DBBlock
     block.should.have.property('hash').equal(mocks.block0.hash);
     block.should.have.property('signature').equal(mocks.block0.signature);

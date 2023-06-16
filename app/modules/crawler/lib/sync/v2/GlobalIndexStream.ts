@@ -205,7 +205,8 @@ export class GlobalIndexStream extends Duplex {
 
       const requiredBindexSize = requiredBindexSizeForTail(block, this.conf);
       if (
-        (block.number <= this.to - requiredBindexSize - 1 || cliprogram.noSources) &&
+        (block.number <= this.to - requiredBindexSize - 1 ||
+          cliprogram.noSources) &&
         !this.cautious
       ) {
         // If we require nosources option, this blockchain can't be valid so we don't make checks

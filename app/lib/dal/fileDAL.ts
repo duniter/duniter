@@ -1309,7 +1309,7 @@ export class FileDAL implements ServerDAO {
 
   @MonitorExecutionTime()
   async trimIndexes(maxNumber: number) {
-    logger.trace('Trim indexes below block #%s', maxNumber)
+    logger.trace("Trim indexes below block #%s", maxNumber);
     if (!cliprogram.notrim) {
       await this.bindexDAL.trimBlocks(maxNumber);
       await this.iindexDAL.trimRecords(maxNumber);
@@ -1323,7 +1323,7 @@ export class FileDAL implements ServerDAO {
   }
 
   async trimSandboxes(block: { medianTime: number }) {
-    logger.trace('Trim sandboxes below median time %s', block.medianTime)
+    logger.trace("Trim sandboxes below median time %s", block.medianTime);
     await this.certDAL.trimExpiredCerts(block.medianTime);
     await this.msDAL.trimExpiredMemberships(block.medianTime);
     await this.idtyDAL.trimExpiredIdentities(block.medianTime);

@@ -715,11 +715,13 @@ export function requiredBindexSizeForTail(
   TAIL: { issuersCount: number; issuersFrame: number },
   conf: { medianTimeBlocks: number; dtDiffEval: number; forksize: number }
 ) {
-  return conf.forksize +
-      [
-        TAIL.issuersCount,
-        TAIL.issuersFrame,
-        conf.medianTimeBlocks,
-        conf.dtDiffEval,
-      ].reduce((max, value) => Math.max(max, value), 0);
+  return (
+    conf.forksize +
+    [
+      TAIL.issuersCount,
+      TAIL.issuersFrame,
+      conf.medianTimeBlocks,
+      conf.dtDiffEval,
+    ].reduce((max, value) => Math.max(max, value), 0)
+  );
 }

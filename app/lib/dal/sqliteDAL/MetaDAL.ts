@@ -220,9 +220,17 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       try {
         await txsDAL.exec(
           "ALTER TABLE txs ADD COLUMN issuer VARCHAR(50) NULL;" +
-            "ALTER TABLE txs ADD COLUMN recipient VARCHAR(50) NULL;" +
-            // SHOULD start transaction after ALTER TABLE, to avoid leaving a not closed transaction, if failed - close #1448
-            "BEGIN;" +
+            "ALTER TABLE txs ADD COLUMN recipient VARCHAR(50) NULL;"
+        );
+      } catch (err) {
+        // Silent: if column already exists
+      }
+
+      // Fill columns 'issuer' and 'recipient'
+      // SHOULD start transaction after ALTER TABLE, to avoid leaving a not closed transaction, if failed - close #1448
+      try {
+        await txsDAL.exec(
+          "BEGIN;" +
             "UPDATE txs SET issuer = SUBSTR(issuers, 2, LENGTH(issuers) - 4) WHERE issuer IS NULL AND issuers NOT LIKE '%,%';" +
             "UPDATE txs SET recipient = SUBSTR(recipients, 2, LENGTH(recipients) - 4) WHERE recipient IS NULL AND recipients NOT LIKE '%,%';" +
             "COMMIT;"

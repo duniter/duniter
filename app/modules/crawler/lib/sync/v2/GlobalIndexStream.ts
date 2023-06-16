@@ -38,8 +38,6 @@ let sync_iindex: any[] = [];
 let sync_mindex: any[] = [];
 let sync_cindex: any[] = [];
 let sync_nextExpiring = 0;
-let sync_bindexSize = 0;
-let sync_txs: any[] = [];
 let txCount = 0;
 let logger = NewLogger();
 
@@ -205,9 +203,9 @@ export class GlobalIndexStream extends Duplex {
         );
       }
 
-      const bindexSize = requiredBindexSizeForTail(block, this.conf);
+      const requiredBindexSize = requiredBindexSizeForTail(block, this.conf);
       if (
-        (block.number <= this.to - bindexSize - 1 || cliprogram.noSources) &&
+        (block.number <= this.to - requiredBindexSize - 1 || cliprogram.noSources) &&
         !this.cautious
       ) {
         // If we require nosources option, this blockchain can't be valid so we don't make checks
@@ -392,27 +390,21 @@ export class GlobalIndexStream extends Duplex {
         }
 
         // Trim the bindex
-        sync_bindexSize =
-          this.conf.forksize +
-          [
-            block.issuersCount,
-            block.issuersFrame,
-            this.conf.medianTimeBlocks,
-            this.conf.dtDiffEval,
-            dataArray.length,
-          ].reduce((max, value) => {
-            return Math.max(max, value);
-          }, 0);
+        let maxBindexSize = Math.max(requiredBindexSize, dataArray.length) * 2;
 
-        if (sync_bindexSize && sync_bindex.length >= 2 * sync_bindexSize) {
+        if (sync_bindex.length >= maxBindexSize) {
           // We trim it, not necessary to store it all (we already store the full blocks)
-          sync_bindex.splice(0, sync_bindexSize);
-          // TODO GINDEX
-          await this.doTrimming();
+          sync_bindex.splice(0, sync_bindex.length - requiredBindexSize);
+          await this.trimIndexes();
         }
       } else if (block.number <= this.to) {
+        // Trim bindex to the minimal required size
+        if (sync_bindex.length > requiredBindexSize) {
+          sync_bindex.splice(0, sync_bindex.length - requiredBindexSize);
+        }
+
         const dto = BlockDTO.fromJSONObject(block);
-        await this.finalizeSync(block, dto);
+        await this.finalizeSync(block, dto, dto.number === this.to);
       }
 
       gindex.push(gData);
@@ -530,13 +522,13 @@ export class GlobalIndexStream extends Duplex {
   }
 
   @MonitorExecutionTime()
-  private async doTrimming() {
+  private async trimIndexes() {
     // Process triming & archiving continuously to avoid super long ending of sync
     await this.dal.trimIndexes(sync_bindex[0].number);
   }
 
   @MonitorExecutionTime()
-  private async finalizeSync(block: BlockDTO, dto: BlockDTO) {
+  private async finalizeSync(block: BlockDTO, dto: BlockDTO, trim: boolean) {
     // Save the INDEX
     await this.dal.bindexDAL.insertBatch(sync_bindex);
     await this.dal.flushIndexes({
@@ -607,7 +599,8 @@ export class GlobalIndexStream extends Duplex {
       HEAD,
       this.conf,
       this.dal,
-      NewLogger()
+      NewLogger(),
+      trim
     );
 
     // Clean temporary variables
@@ -615,7 +608,6 @@ export class GlobalIndexStream extends Duplex {
     sync_iindex = [];
     sync_mindex = [];
     sync_cindex = [];
-    sync_bindexSize = 0;
     sync_expires = [];
     sync_nextExpiring = 0;
   }

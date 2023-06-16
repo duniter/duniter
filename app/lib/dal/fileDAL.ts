@@ -213,11 +213,6 @@ export class FileDAL implements ServerDAO {
     }
   }
 
-  generateUpgradeSql() {
-    // Make sure to always renable constraints (a.g. if the last sync failed, it can be still disabled)
-    return "PRAGMA ignore_check_constraints = true;";
-  }
-
   async disableCheckConstraints() {
     logger.info("Disabling database check constraints...");
     await this.metaDAL.exec("PRAGMA ignore_check_constraints = true;");
@@ -1235,11 +1230,13 @@ export class FileDAL implements ServerDAO {
     }
   }
 
-  saveBlock(dbb: DBBlock) {
-    return this.blockDAL.saveBlock(dbb);
+  async saveBlock(dbb: DBBlock, conf: ConfDTO) {
+    await this.blockDAL.saveBlock(dbb);
 
-    // Since v1.8.7, saveTxsInFiles() should be call only if TX storage enabled, by the caller
-    //await this.saveTxsInFiles(dbb.transactions, dbb.number, dbb.medianTime);
+    // Since v1.8.7, TX are not always stored
+    if (conf.storage?.transactions !== false) {
+      await this.saveTxsInFiles(dbb.transactions, dbb.number, dbb.medianTime);
+    }
   }
 
   saveSideBlock(block: DBBlock) {
@@ -1312,6 +1309,7 @@ export class FileDAL implements ServerDAO {
 
   @MonitorExecutionTime()
   async trimIndexes(maxNumber: number) {
+    logger.trace('Trim indexes below block #%s', maxNumber)
     if (!cliprogram.notrim) {
       await this.bindexDAL.trimBlocks(maxNumber);
       await this.iindexDAL.trimRecords(maxNumber);
@@ -1325,6 +1323,7 @@ export class FileDAL implements ServerDAO {
   }
 
   async trimSandboxes(block: { medianTime: number }) {
+    logger.trace('Trim sandboxes below median time %s', block.medianTime)
     await this.certDAL.trimExpiredCerts(block.medianTime);
     await this.msDAL.trimExpiredMemberships(block.medianTime);
     await this.idtyDAL.trimExpiredIdentities(block.medianTime);

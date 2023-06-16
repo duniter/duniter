@@ -300,6 +300,10 @@ export class ConfDTO
       forksize: constants.BRANCHES.DEFAULT_WINDOW_SIZE,
       switchOnHeadAdvance: CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS,
       nonWoTPeersLimit: CommonConstants.DEFAULT_NON_WOT_PEERS_LIMIT,
+      storage: {
+        transactions: true,
+        wotwizard: false,
+      },
     };
   }
 

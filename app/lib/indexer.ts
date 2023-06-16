@@ -600,6 +600,9 @@ export class Indexer {
 
     const HEAD_1 = await head(1);
 
+    // CHECK Bindex is valid
+    if (HEAD_1 && HEAD_1.number !== HEAD.number - 1) throw new Error('Invalid bindex: cannot found HEAD-1!');
+
     // BR_G04
     await Indexer.prepareIssuersCount(HEAD, range, HEAD_1);
 

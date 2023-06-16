@@ -320,19 +320,12 @@ export class DuniterBlockchain {
     // Compute to be revoked members
     await this.computeToBeRevoked(indexes.mindex, dal);
 
-    // Delete eventually present transactions
-    // NOT NEED => already done in saveTxsInFiles()
-    //await this.deleteTransactions(block, dal);
-
-    await dal.trimSandboxes(block);
+    if (trim) {
+      await dal.trimSandboxes(block);
+    }
 
     // Saves the block (DAL)
-    await dal.saveBlock(dbb);
-
-    // Save Transactions (DAL)
-    if (conf.storage?.transactions !== false) {
-      await dal.saveTxsInFiles(dbb.transactions, dbb.number, dbb.medianTime);
-    }
+    await dal.saveBlock(dbb, conf);
 
     // Save wot file
     if (!dal.fs.isMemoryOnly()) {
@@ -711,6 +704,7 @@ export class DuniterBlockchain {
     const TAIL = await dal.bindexDAL.tail();
     const MAX_BINDEX_SIZE = requiredBindexSizeForTail(TAIL, conf);
     const currentSize = HEAD.number - TAIL.number + 1;
+
     if (currentSize > MAX_BINDEX_SIZE) {
       await dal.trimIndexes(HEAD.number - MAX_BINDEX_SIZE);
     }
@@ -721,13 +715,11 @@ export function requiredBindexSizeForTail(
   TAIL: { issuersCount: number; issuersFrame: number },
   conf: { medianTimeBlocks: number; dtDiffEval: number; forksize: number }
 ) {
-  const bindexSize = [
-    TAIL.issuersCount,
-    TAIL.issuersFrame,
-    conf.medianTimeBlocks,
-    conf.dtDiffEval,
-  ].reduce((max, value) => {
-    return Math.max(max, value);
-  }, 0);
-  return conf.forksize + bindexSize;
+  return conf.forksize +
+      [
+        TAIL.issuersCount,
+        TAIL.issuersFrame,
+        conf.medianTimeBlocks,
+        conf.dtDiffEval,
+      ].reduce((max, value) => Math.max(max, value), 0);
 }

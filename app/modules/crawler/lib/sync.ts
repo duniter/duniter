@@ -248,9 +248,6 @@ export class Synchroniser extends stream.Duplex {
         await this.syncStrategy.syncPeers(fullSync, to);
       }
 
-      // Enable check constraints
-      if (!cautious) await this.server.dal.enableCheckConstraints();
-
       const syncDuration = Date.now() - syncStartTime;
       this.watcher.end(syncDuration);
       this.push({ sync: true });
@@ -263,6 +260,10 @@ export class Synchroniser extends stream.Duplex {
         );
       this.watcher.end();
       throw err;
+    }
+    finally {
+      // Make sure to enable check constraints, even if failed
+      await this.server.dal.enableCheckConstraints();
     }
   }
 }

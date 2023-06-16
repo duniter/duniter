@@ -16,6 +16,7 @@ import {Directory} from "../../app/lib/system/directory"
 import {Indexer} from "../../app/lib/indexer"
 import {simpleNodeWith2Users} from "../integration/tools/toolbox"
 import {LevelDBSindex} from "../../app/lib/dal/indexDAL/leveldb/LevelDBSindex";
+import {requiredBindexSizeForTail} from "../../app/lib/blockchain/DuniterBlockchain";
 
 const should = require('should');
 
@@ -173,19 +174,30 @@ describe("Triming", function(){
 
   it('should be able to trim the bindex', async () => {
     // Triming
-    const server = (await simpleNodeWith2Users({
+    const conf = {
       forksize: 9,
       sigQty: 1,
       dtDiffEval: 2,
       medianTimeBlocks: 3
-    })).s1;
+    };
+    const server = (await simpleNodeWith2Users(conf)).s1;
+
     // const s1 = server.s1;
-    for (let i = 0; i < 13; i++) {
+    const b0 = await server.commit()
+
+    const requiredBindexSize = requiredBindexSizeForTail(b0, conf);
+    should(requiredBindexSize).equal(12);
+
+    for (let i = 1; i <= requiredBindexSize; i++) {
       await server.commit();
     }
     (await server.dal.bindexDAL.head(1)).should.have.property('number').equal(12);
     (await server.dal.bindexDAL.head(13)).should.have.property('number').equal(0);
-    await server.commit();
+
+    // Fill bindex until requiredBindexSize * 2
+    for (let i = 0; i < requiredBindexSize; i++) {
+      await server.commit();
+    }
     should.not.exists(await server.dal.bindexDAL.head(14)); // Trimed
 
     await server.closeCluster()

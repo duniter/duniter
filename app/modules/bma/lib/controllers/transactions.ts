@@ -154,6 +154,7 @@ export class TransactionBinding extends AbstractController {
     dbTxHistory: {
       sent?: DBTx[];
       received?: DBTx[];
+      receiving?: DBTx[];
       sending?: DBTx[];
       pending?: DBTx[];
     }
@@ -164,6 +165,7 @@ export class TransactionBinding extends AbstractController {
       history: {
         sending: dbTxHistory.sending?.map(dbtx2HttpTxOfHistory) || [],
         received: dbTxHistory.received?.map(dbtx2HttpTxOfHistory) || [],
+        receiving: dbTxHistory.receiving?.map(dbtx2HttpTxOfHistory) || [],
         sent: dbTxHistory.sent?.map(dbtx2HttpTxOfHistory) || [],
         pending: dbTxHistory.pending?.map(dbtx2HttpTxOfHistory) || [],
       },

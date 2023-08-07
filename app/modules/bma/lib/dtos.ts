@@ -876,6 +876,7 @@ export const TxHistory = {
     sent: [TxOfHistory],
     received: [TxOfHistory],
     sending: [TxOfHistory],
+    receiving: [TxOfHistory],
     pending: [TxOfHistory],
   },
 };
@@ -887,6 +888,7 @@ export interface HttpTxHistory {
     sent: HttpTxOfHistory[];
     received: HttpTxOfHistory[];
     sending: HttpTxOfHistory[];
+    receiving: HttpTxOfHistory[];
     pending: HttpTxOfHistory[];
   };
 }

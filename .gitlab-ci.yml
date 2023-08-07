@@ -167,7 +167,7 @@ releases:x64:
   script:
     - docker pull $CI_REGISTRY_IMAGE:$IMAGE_TAG || true
     - docker build --cache-from $CI_REGISTRY_IMAGE:$IMAGE_TAG --pull -t "$CI_REGISTRY_IMAGE:$IMAGE_TAG" -f release/docker/Dockerfile .
-    - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" $CI_REGISTRY
+    - docker login -u "gitlab-ci-token" -p "$CI_JOB_TOKEN" $CI_REGISTRY
     - docker push "$CI_REGISTRY_IMAGE:$IMAGE_TAG"
 
 package:test:docker-test-image:
@@ -202,12 +202,12 @@ package:prod:docker:
     - docker:18.06-dind
   script:
     - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" -f release/docker/Dockerfile .
-    - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" $CI_REGISTRY
+    - docker login -u "gitlab-ci-token" -p "$CI_JOB_TOKEN" $CI_REGISTRY
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
     - docker login -u "duniterteam" -p "$DUNITERTEAM_PASSWD"
-    - docker tag "$CI_REGISTRY_IMAGE:$CI_BUILD_TAG" "duniter/duniter:$CI_BUILD_TAG"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" "duniter/duniter:$CI_COMMIT_TAG"
     - docker push "duniter/duniter:$CI_COMMIT_TAG"
-    - docker tag "$CI_REGISTRY_IMAGE:$CI_BUILD_TAG" duniter/duniter
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" duniter/duniter
     - docker push duniter/duniter
 
 .release_jobs: &release_jobs

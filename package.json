@@ -87,7 +87,7 @@
     "levelup": "4.3.2",
     "memdown": "5.1.0",
     "merkle": "0.6.0",
-    "moment": "2.24.0",
+    "moment": "2.29.4",
     "morgan": "1.10.0",
     "multimeter": "0.1.1",
     "nat-upnp": "^1.1.1",

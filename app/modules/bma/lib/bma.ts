@@ -305,7 +305,7 @@ export const bma = function (
       );
       httpMethods.httpGET(
         "/tx/history/:pubkey/pending",
-        (req: any) => transactions.getPendingForPubkey(req),
+        (req: any) => transactions.getPendingByPubkey(req),
         BMALimitation.limitAsHighUsage()
       );
       httpMethods.httpGET(

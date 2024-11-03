@@ -61,6 +61,7 @@ import {CommonConstants} from "../../../app/lib/common-libs/constants"
 import {WS2PRequester} from "../../../app/modules/ws2p/lib/WS2PRequester"
 import {WS2PDependency} from "../../../app/modules/ws2p/index"
 import {ForcedBlockValues} from "../../../app/modules/prover/lib/blockGenerator"
+import {LevelMIndexExpiresOnIndexer} from "../../../app/lib/dal/indexDAL/leveldb/indexers/LevelMIndexExpiresOnIndexer";
 
 const assert      = require('assert');
 const rp          = require('request-promise');
@@ -242,6 +243,11 @@ export const NewTestingServer = (conf:any) => {
     httpLogs: true,
     forksize: conf.forksize !== undefined ? conf.forksize : 3,
     nonWoTPeersLimit: CommonConstants.DEFAULT_NON_WOT_PEERS_LIMIT,
+    storage: {
+      transaction: true,
+      wotwizard: false,
+      ...conf.storage
+    }
   };
   if (conf.sigQty === undefined) {
     conf.sigQty = 1;
@@ -259,7 +265,7 @@ export const NewTestingServer = (conf:any) => {
 }
 
 export const serverWaitBlock = async (server:Server, number:number) => {
-  await new Promise((res) => {
+  await new Promise<void>((res) => {
     const interval = setInterval(async () => {
       const current = await server.dal.getCurrentBlockOrNull()
       if (current && current.number == number) {
@@ -275,7 +281,7 @@ export const waitToHaveBlock = async (server:Server, number:number) => {
 }
 
 export const waitForkResolution = async (server:Server, number:number) => {
-  await new Promise(res => {
+  await new Promise<void>(res => {
     server.pipe(es.mapSync((e:any) => {
       if (e.bcEvent === 'switched' && e.block.number === number) {
         res()
@@ -287,7 +293,7 @@ export const waitForkResolution = async (server:Server, number:number) => {
 }
 
 export const waitForkWS2PConnection = async (server:Server, pubkey:string) => {
-  await new Promise(res => {
+  await new Promise<void>(res => {
     server.pipe(es.mapSync((e:any) => {
       if (e.ws2p === 'connected' && e.to.pubkey === pubkey) {
         res()
@@ -299,7 +305,7 @@ export const waitForkWS2PConnection = async (server:Server, pubkey:string) => {
 }
 
 export const waitForkWS2PDisconnection = async (server:Server, pubkey:string) => {
-  await new Promise(res => {
+  await new Promise<void>((res) => {
     server.pipe(es.mapSync((e:any) => {
       if (e.ws2p === 'disconnected' && e.peer.pub === pubkey) {
         res()
@@ -386,6 +392,27 @@ export class TestingServer {
     return blocksResolved
   }
 
+  async resolveForError(): Promise<string|null> {
+    const server = this.server
+    const bcService = await server.BlockchainService
+    let errorCatch: Promise<string> = new Promise(res => {
+      server.pipe(es.mapSync((e:any) => {
+        if (e.blockResolutionError) {
+          res(e.blockResolutionError)
+        }
+      }))
+    })
+    await bcService.blockResolution()
+    return Promise.race([
+      errorCatch,
+      new Promise<null>(res => setTimeout(() => res(null), 200))
+    ])
+  }
+
+  getMindexExpiresOnIndexer(): LevelMIndexExpiresOnIndexer {
+    return (this.server.dal.mindexDAL as any).indexForExpiresOn
+  }
+
   async resolveFork(): Promise<BlockDTO|null> {
     return this.server.BlockchainService.forkResolution()
   }
@@ -451,7 +478,7 @@ export class TestingServer {
   }
 
   push(chunk: any, encoding?: string) {
-    return this.server.push(chunk, encoding)
+    return this.server.push(chunk, encoding as BufferEncoding)
   }
 
   pipe(writable:stream.Writable) {
@@ -544,7 +571,7 @@ export class TestingServer {
 
   async commitWaitError(options:any, expectedError:string) {
     const results = await Promise.all([
-      new Promise(res => {
+      new Promise<void>((res) => {
         this.server.pipe(es.mapSync((e:any) => {
           if (e.blockResolutionError === expectedError) {
             res()

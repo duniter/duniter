@@ -319,10 +319,10 @@ export class DuniterBlockchain {
     await this.removeMembershipsFromSandbox(block, dal);
     // Compute to be revoked members
     await this.computeToBeRevoked(indexes.mindex, dal);
-    // Delete eventually present transactions
-    await this.deleteTransactions(block, dal);
 
-    await dal.trimSandboxes(block);
+    if (trim) {
+      await dal.trimSandboxes(block);
+    }
 
     // Saves the block (DAL)
     await dal.saveBlock(dbb, conf);
@@ -550,6 +550,7 @@ export class DuniterBlockchain {
     if (block) {
       await this.undoDeleteTransactions(block, dal);
     }
+    NewLogger().info("Reverted block #%s", blockstamp);
   }
 
   static async undoMembersUpdate(blockstamp: string, dal: FileDAL) {
@@ -687,8 +688,7 @@ export class DuniterBlockchain {
     block.fork = true;
     try {
       // Saves the block (DAL)
-      block.wrong = false;
-      await dal.saveSideBlockInFile(block);
+      await dal.saveSideBlock(block);
       logger.info(
         "SIDE Block #%s-%s added to the blockchain in %s ms",
         block.number,
@@ -709,6 +709,7 @@ export class DuniterBlockchain {
     const TAIL = await dal.bindexDAL.tail();
     const MAX_BINDEX_SIZE = requiredBindexSizeForTail(TAIL, conf);
     const currentSize = HEAD.number - TAIL.number + 1;
+
     if (currentSize > MAX_BINDEX_SIZE) {
       await dal.trimIndexes(HEAD.number - MAX_BINDEX_SIZE);
     }
@@ -719,13 +720,13 @@ export function requiredBindexSizeForTail(
   TAIL: { issuersCount: number; issuersFrame: number },
   conf: { medianTimeBlocks: number; dtDiffEval: number; forksize: number }
 ) {
-  const bindexSize = [
-    TAIL.issuersCount,
-    TAIL.issuersFrame,
-    conf.medianTimeBlocks,
-    conf.dtDiffEval,
-  ].reduce((max, value) => {
-    return Math.max(max, value);
-  }, 0);
-  return conf.forksize + bindexSize;
+  return (
+    conf.forksize +
+    [
+      TAIL.issuersCount,
+      TAIL.issuersFrame,
+      conf.medianTimeBlocks,
+      conf.dtDiffEval,
+    ].reduce((max, value) => Math.max(max, value), 0)
+  );
 }

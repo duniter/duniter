@@ -21,14 +21,28 @@ import { ProgramOptions } from "../lib/common-libs/programOptions";
 
 module.exports = {
   duniter: {
-    cliOptions: [],
-
+    cliOptions: [],ProgramOptions
     config: {
       onLoading: async (conf: ConfDTO, program: ProgramOptions) => {
         conf.msPeriod = conf.msWindow;
         conf.sigReplay = conf.msPeriod;
         conf.switchOnHeadAdvance =
           CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS;
+
+        // Garder la gestion du stockage des transactions de 1.8
+        // car c'est une fonctionnalité importante pour les optimisations BMA
+        conf.storage = conf.storage || {
+          transactions: false,
+          wotwizard: false,
+        };
+        
+        // Conserver la logique de configuration du stockage
+        if (program.storeTxs || (program.storeTxs === undefined && !conf.nobma)) {
+          conf.storage.transactions = true;
+        }
+        if (program.storeWw) {
+          conf.storage.wotwizard = true;
+        }
       },
       beforeSave: async (conf: ConfDTO) => {
         conf.msPeriod = conf.msWindow;
@@ -68,10 +82,9 @@ module.exports = {
           const aggregates = Underscore.uniq(
             lines
               .map((l) => l.match(/: (\[\w+\](\[\w+\])*)/))
-              .filter((l) => l)
-              .map((l: string[]) => l[1])
+              .filter((l) => !!l)
+              .map((l) => l && ((l[1] as unknown) as string))
           );
-          console.log(aggregates);
           const results = aggregates.map((a: string) => {
             return {
               name: a,

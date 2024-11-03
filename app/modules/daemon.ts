@@ -14,6 +14,10 @@
 import { ConfDTO } from "../lib/dto/ConfDTO";
 import { Server } from "../../server";
 import { ExitCodes } from "../lib/common-libs/exit-codes";
+import { Directory } from "../lib/system/directory";
+import { RealFS } from "../lib/system/directory";
+import { Tail } from "tail";
+import { constants } from "../lib/common-libs/constants";
 
 module.exports = {
   duniter: {
@@ -66,6 +70,24 @@ module.exports = {
         },
       },
       {
+        name: "logs",
+        desc: "Follow duniter logs.",
+        logs: false,
+        onConfiguredExecute: async (
+          server: Server,
+          conf: ConfDTO,
+          program: any,
+          params: any
+        ) => {
+          printTailAndWatchFile(
+            Directory.INSTANCE_HOMELOG_FILE,
+            constants.NB_INITIAL_LINES_TO_SHOW
+          );
+          // Never ending command
+          return new Promise<void>((res) => null);
+        },
+      },
+      {
         name: "direct_start",
         desc: "Start Duniter node with direct output, non-daemonized.",
         onDatabaseExecute: async (
@@ -93,7 +115,7 @@ module.exports = {
 
           logger.info(">> Server ready!");
 
-          return new Promise(() => null); // Never ending
+          return new Promise<void>(() => null); // Never ending
         },
       },
     ],
@@ -104,4 +126,56 @@ function ServerService(server: Server) {
   server.startService = () => Promise.resolve();
   server.stopService = () => Promise.resolve();
   return server;
+}
+
+function startDaemon(daemon: any) {
+  return new Promise<void>((resolve, reject) =>
+    daemon.start((err: any) => {
+      if (err) return reject(err);
+      resolve();
+    })
+  );
+}
+
+function stopDaemon(daemon: any) {
+  return new Promise<void>((resolve, reject) =>
+    daemon.stop((err: any) => {
+      err && console.error(err);
+      if (err) return reject(err);
+      resolve();
+    })
+  );
+}
+
+async function printTailAndWatchFile(file: any, tailSize: number) {
+  const fs = RealFS();
+  if (await fs.fsExists(file)) {
+    const content = await fs.fsReadFile(file);
+    const lines = content.split("\n");
+    const from = Math.max(0, lines.length - tailSize);
+    const lastLines = lines.slice(from).join("\n");
+    console.log(lastLines);
+  }
+  watchFile(file);
+}
+
+function watchFile(file: any) {
+  const tail = new Tail(file);
+
+  // Specific errors handling
+  process.on("uncaughtException", (err: any) => {
+    if (err.code === "ENOENT") {
+      console.error("EXCEPTION: ", err.message);
+      setTimeout(() => watchFile(file), 1000); // Wait a second
+    }
+  });
+
+  // On new line
+  tail.on("line", function (data: any) {
+    console.log(data);
+  });
+
+  tail.on("error", function (error: any) {
+    console.error("ERROR: ", error);
+  });
 }

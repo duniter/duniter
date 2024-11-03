@@ -43,7 +43,7 @@ export class UpnpProvider {
 
   async checkUPnPisAvailable() {
     try {
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         this.client.externalIp((err: any, res: any) => {
           if (err || !res) {
             reject();
@@ -179,7 +179,7 @@ export class UpnpProvider {
   }
 
   static async getUPnPMappings(client: any): Promise<any> {
-    return new Promise((resolve, reject) => {
+    return new Promise<any>((resolve, reject) => {
       client.getMappings((err: any, res: any) => {
         if (err) {
           reject(err);
@@ -200,7 +200,7 @@ export class UpnpProvider {
     let keys = Underscore.keys(netInterfaces);
     let res = [];
     for (const name of keys) {
-      let addresses = netInterfaces[name];
+      let addresses = netInterfaces[name] || [];
       for (const addr of addresses) {
         if (!family || addr.family == family) {
           res.push({

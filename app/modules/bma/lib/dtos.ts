@@ -21,6 +21,10 @@ export const Summary = {
     software: String,
     version: String,
     forkWindowSize: Number,
+    storage: {
+      transactions: Boolean,
+      wotwizard: Boolean,
+    },
   },
 };
 
@@ -29,6 +33,10 @@ export interface HttpSummary {
     software: string;
     version: string;
     forkWindowSize: number;
+    storage: {
+      transactions: boolean;
+      wotwizard: boolean;
+    };
   };
 }
 
@@ -197,6 +205,7 @@ export interface HttpTransactionOfBlock {
   unlocks: string[];
   signatures: string[];
   comment: string;
+  time?: number;
 }
 
 export const Block = {
@@ -307,6 +316,7 @@ export function block2HttpBlock(blockDTO: BlockDTO): HttpBlock {
           hash: tx.hash,
           blockstamp: tx.blockstamp,
           blockstampTime: tx.blockstampTime,
+          time: tx.time || undefined
         };
       }
     ),
@@ -781,11 +791,12 @@ export interface HttpTransaction {
   signatures: string[];
   raw: string;
   written_block: number | null;
-  writtenTime: number;
+  writtenTime: number | null;
   hash: string;
 }
 
 export interface HttpTransactionPending {
+  currency: string;
   version: number;
   issuers: string[];
   inputs: string[];
@@ -796,6 +807,8 @@ export interface HttpTransactionPending {
   signatures: string[];
   hash: string;
   receivedTime: number;
+  blockstamp?: string;
+  blockstampTime?: number;
 }
 
 export const Source = {
@@ -880,6 +893,7 @@ export interface HttpTxHistory {
     sent: HttpTxOfHistory[];
     received: HttpTxOfHistory[];
     sending: HttpTxOfHistory[];
+    receiving: HttpTxOfHistory[];
     pending: HttpTxOfHistory[];
   };
 }

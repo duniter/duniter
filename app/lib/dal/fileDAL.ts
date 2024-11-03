@@ -50,7 +50,6 @@ import { MIndexDAO } from "./indexDAL/abstract/MIndexDAO";
 import { SIndexDAO } from "./indexDAL/abstract/SIndexDAO";
 import { CIndexDAO } from "./indexDAL/abstract/CIndexDAO";
 import { IdentityForRequirements } from "../../service/BlockchainService";
-import { NewLogger } from "../logger";
 import { BlockchainDAO } from "./indexDAL/abstract/BlockchainDAO";
 import { WalletDAO } from "./indexDAL/abstract/WalletDAO";
 import { PeerDAO } from "./indexDAL/abstract/PeerDAO";
@@ -132,8 +131,7 @@ export class FileDAL implements ServerDAO {
   sindexDAL: SIndexDAO;
   cindexDAL: CIndexDAO;
   dividendDAL: DividendDAO;
-  newDals: { [k: string]: Initiable };
-  private dals: (PeerDAO | WalletDAO | GenericDAO<any>)[];
+  dals: { [k: string]: Initiable };
 
   loadConfHook: (conf: ConfDTO) => Promise<void>;
   saveConfHook: (conf: ConfDTO) => Promise<ConfDTO>;
@@ -153,7 +151,8 @@ export class FileDAL implements ServerDAO {
     this.powDAL = new PowDAL(this.rootPath, params.fs);
     this.confDAL = new ConfDAL(this.rootPath, params.fs);
     this.metaDAL = new (require("./sqliteDAL/MetaDAL").MetaDAL)(
-      this.sqliteDriver
+      this.sqliteDriver,
+      getSqliteDB
     );
     this.idtyDAL = new (require("./sqliteDAL/IdentityDAL").IdentityDAL)(
       this.sqliteDriver
@@ -175,7 +174,7 @@ export class FileDAL implements ServerDAO {
     this.cindexDAL = new LevelDBCindex(getLevelDB);
     this.dividendDAL = new LevelDBDividend(getLevelDB);
 
-    this.newDals = {
+    this.dals = {
       powDAL: this.powDAL,
       metaDAL: this.metaDAL,
       blockDAL: this.blockDAL,
@@ -197,25 +196,9 @@ export class FileDAL implements ServerDAO {
   async init(conf: ConfDTO, commandName: string | null = null) {
     // wotb
     this.wotb = this.params.wotbf();
-
-    // DALs
-    this.dals = [
-      this.blockDAL,
-      this.peerDAL,
-      this.walletDAL,
-      this.bindexDAL,
-      this.mindexDAL,
-      this.iindexDAL,
-      this.sindexDAL,
-      this.cindexDAL,
-      this.dividendDAL,
-    ];
-    for (const indexDAL of this.dals) {
-      indexDAL.triggerInit();
-    }
-    const dalNames = Underscore.keys(this.newDals);
+    const dalNames = Underscore.keys(this.dals);
     for (const dalName of dalNames) {
-      const dal = this.newDals[dalName];
+      const dal = this.dals[dalName];
       await dal.init();
     }
     // Rust server
@@ -265,14 +248,6 @@ export class FileDAL implements ServerDAO {
 
   getDBVersion() {
     return this.metaDAL.getVersion();
-  }
-
-  writeFileOfBlock(block: DBBlock) {
-    return this.blockDAL.saveBlock(block);
-  }
-
-  writeSideFileOfBlock(block: DBBlock) {
-    return this.blockDAL.saveSideBlock(block);
   }
 
   listAllPeers() {
@@ -470,8 +445,10 @@ export class FileDAL implements ServerDAO {
   }
 
   async getAvailableSourcesByPubkey(pubkey: string): Promise<HttpSource[]> {
-    const txAvailable = await this.sindexDAL.getAvailableForPubkey(pubkey);
-    const sources: UDSource[] = await this.dividendDAL.getUDSources(pubkey);
+    const [txAvailable, sources] = await Promise.all([
+      this.sindexDAL.getAvailableForPubkey(pubkey),
+      this.dividendDAL.getUDSources(pubkey),
+    ]);
     return sources
       .map((d) => {
         return {
@@ -668,7 +645,7 @@ export class FileDAL implements ServerDAO {
         expires_on: membership.expires_on,
         created_on: idty.created_on,
         revoked: !!membership.revoked_on,
-        revocation_sig: membership.revocation,
+        revocation_sig: membership.revocation || null,
       };
     }
     return {
@@ -680,7 +657,7 @@ export class FileDAL implements ServerDAO {
       member: pending.member,
       wasMember: pending.wasMember,
       revoked: pending.revoked,
-      revocation_sig: pending.revocation_sig,
+      revocation_sig: pending.revocation_sig || null,
     };
   }
 
@@ -739,6 +716,17 @@ export class FileDAL implements ServerDAO {
     member: boolean;
   } | null> {
     return await this.iindexDAL.getFromPubkeyOrUid(search);
+  }
+
+  async getWrittenIdtyByPubkeyForHashingAndIsMember(
+    pub: string
+  ): Promise<{
+    uid: string;
+    created_on: string;
+    pub: string;
+    member: boolean;
+  } | null> {
+    return await this.iindexDAL.getFromPubkey(pub);
   }
 
   async getWrittenIdtyByPubkeyForRevocationCheck(
@@ -851,17 +839,20 @@ export class FileDAL implements ServerDAO {
   async getTxByHash(hash: string): Promise<DBTx | null> {
     let tx = this.rustServer.getTxByHash(hash);
     if (tx === null) {
-      return null;
-    } else {
-      let writtenBlock = tx.writtenBlock ? tx.writtenBlock : null;
-      let writtenTime = tx.writtenTime ? tx.writtenTime : tx.receivedTime;
-      let dbTx = DBTx.fromTransactionDTO(
-        await this.computeTxBlockstampTime(TransactionDTO.fromJSONObject(tx))
-      );
-      dbTx.block_number = writtenBlock;
-      dbTx.time = writtenTime || 0;
-      return dbTx;
+      tx = await this.txDAL.getTxByHash(hash);
+      if (!tx) {
+        return null;
+      }
     }
+    
+    let writtenBlock = tx.writtenBlock ? tx.writtenBlock : null;
+    let writtenTime = tx.writtenTime ? tx.writtenTime : tx.receivedTime;
+    let dbTx = DBTx.fromTransactionDTO(
+      await this.computeTxBlockstampTime(TransactionDTO.fromJSONObject(tx))
+    );
+    dbTx.block_number = writtenBlock;
+    dbTx.time = writtenTime || 0;
+    return dbTx;
   }
 
   removePendingTxByHash(hash: string) {
@@ -916,8 +907,32 @@ export class FileDAL implements ServerDAO {
         return i;
       })
     );
+    return this.fillIdentitiesRevocation(found);
+  }
+
+  async searchJustIdentitiesByPubkey(pubkey: string): Promise<DBIdentity[]> {
+    const pendings = await this.idtyDAL.findByPub(pubkey);
+    const writtenIdty = await this.iindexDAL.getOldFromPubkey(pubkey);
+    const nonPendings =
+      writtenIdty &&
+      Underscore.where(pendings, { pubkey: writtenIdty.pub }).length === 0
+        ? [writtenIdty]
+        : [];
+    const found = pendings.concat(
+      nonPendings.map((i: any) => {
+        // Use the correct field
+        i.pubkey = i.pub;
+        return i;
+      })
+    );
+    return this.fillIdentitiesRevocation(found);
+  }
+
+  private async fillIdentitiesRevocation(
+    identities: DBIdentity[]
+  ): Promise<DBIdentity[]> {
     return await Promise.all<DBIdentity>(
-      found.map(async (f) => {
+      identities.map(async (f) => {
         const ms = await this.mindexDAL.getReducedMSForImplicitRevocation(
           f.pubkey
         );
@@ -1261,12 +1276,20 @@ export class FileDAL implements ServerDAO {
   }
 
   async saveBlock(block: DBBlock, conf: ConfDTO) {
-    block.wrong = false;
-    try {
-      this.rustServer.applyBlock(block.toBlockDTO());
-      await this.saveBlockInFile(block);
-    } catch (err) {
-      throw err;
+    this.rustServer.saveBlock(block);
+
+    for (const entry of cindex) {
+      const from = await this.getWrittenIdtyByPubkeyForWotbID(entry.issuer);
+      const to = await this.getWrittenIdtyByPubkeyForWotbID(entry.receiver);
+      if (entry.op == CommonConstants.IDX_CREATE) {
+        wotb.addLink(from.wotb_id, to.wotb_id);
+      } else {
+        wotb.removeLink(from.wotb_id, to.wotb_id);
+      }
+    }
+
+    if (conf.storage?.blocks !== false) {
+      await this.blockDAL.saveBlock(block);
     }
   }
 
@@ -1324,11 +1347,8 @@ export class FileDAL implements ServerDAO {
       const from = await this.getWrittenIdtyByPubkeyForWotbID(entry.issuer);
       const to = await this.getWrittenIdtyByPubkeyForWotbID(entry.receiver);
       if (entry.op == CommonConstants.IDX_CREATE) {
-        // NewLogger().trace('addLink %s -> %s', from.wotb_id, to.wotb_id)
         wotb.addLink(from.wotb_id, to.wotb_id);
       } else {
-        // Update = removal
-        NewLogger().trace("removeLink %s -> %s", from.wotb_id, to.wotb_id);
         wotb.removeLink(from.wotb_id, to.wotb_id);
       }
     }
@@ -1336,6 +1356,7 @@ export class FileDAL implements ServerDAO {
 
   @MonitorExecutionTime()
   async trimIndexes(maxNumber: number) {
+    logger.trace("Trim indexes below block #%s", maxNumber);
     if (!cliprogram.notrim) {
       await this.bindexDAL.trimBlocks(maxNumber);
       await this.iindexDAL.trimRecords(maxNumber);
@@ -1349,6 +1370,7 @@ export class FileDAL implements ServerDAO {
   }
 
   async trimSandboxes(block: { medianTime: number }) {
+    logger.trace("Trim sandboxes below median time %s", block.medianTime);
     await this.certDAL.trimExpiredCerts(block.medianTime);
     await this.msDAL.trimExpiredMemberships(block.medianTime);
     await this.idtyDAL.trimExpiredIdentities(block.medianTime);
@@ -1362,12 +1384,62 @@ export class FileDAL implements ServerDAO {
     return this.msDAL.savePendingMembership(ms);
   }
 
-  async saveBlockInFile(block: DBBlock) {
-    await this.writeFileOfBlock(block);
+  /**
+   * Map tx DTO into DBtxs
+   * @param txs
+   * @param block_number
+   * @param medianTime
+   * @private
+   */
+  private async mapToDBTxs(
+    txs: TransactionDTO[],
+    block_number: number,
+    medianTime: number
+  ): Promise<DBTx[]> {
+    return Promise.all(
+      txs.map(async (tx) => {
+        const sp = tx.blockstamp.split("-", 2);
+        const basedBlock = (await this.getAbsoluteBlockByNumberAndHash(
+          parseInt(sp[0]),
+          sp[1]
+        )) as DBBlock;
+        tx.blockstampTime = basedBlock.medianTime;
+        const txEntity = TransactionDTO.fromJSONObject(tx);
+        if (!txEntity.hash) txEntity.computeAllHashes();
+        const dbTx = DBTx.fromTransactionDTO(txEntity);
+        dbTx.written = true;
+        dbTx.block_number = block_number;
+        dbTx.time = medianTime;
+        return dbTx;
+      })
+    );
   }
 
-  saveSideBlockInFile(block: DBBlock) {
-    return this.writeSideFileOfBlock(block);
+  async saveTxsInFiles(
+    txs: TransactionDTO[],
+    block_number: number,
+    medianTime: number
+  ) {
+    if (!txs.length) return [];
+    const records = await this.mapToDBTxs(txs, block_number, medianTime);
+    await this.txsDAL.saveBatch(records);
+    return records;
+  }
+
+  async insertTxsInFiles(
+    txs: TransactionDTO[],
+    block_number: number,
+    medianTime: number
+  ): Promise<DBTx[]> {
+    if (!txs.length) return [];
+    const records = await this.mapToDBTxs(txs, block_number, medianTime);
+    await this.txsDAL.insertBatch(records);
+    return records;
+  }
+
+  removeAllTxs() {
+    logger.debug("Removing all existing txs...");
+    return this.txsDAL.removeAll();
   }
 
   async merkleForPeers() {
@@ -1434,32 +1506,20 @@ export class FileDAL implements ServerDAO {
     return db_tx;
   }
 
-  async getTransactionsHistory(pubkey: string) {
-    const history: {
-      sent: DBTx[];
-      received: DBTx[];
-      sending: DBTx[];
-      pending: DBTx[];
-    } = {
-      sent: [],
-      received: [],
-      sending: [],
-      pending: [],
-    };
-    const res = this.rustServer.getTransactionsHistory(pubkey);
-    history.sent = await Promise.all(
-      res.sent.map(async (tx) => this.RustDbTxToDbTx(tx))
-    );
-    history.received = await Promise.all(
-      res.received.map(async (tx) => this.RustDbTxToDbTx(tx))
-    );
-    history.sending = await Promise.all(
-      res.sending.map(async (tx) => this.RustPendingTxToDbTx(tx))
-    );
-    history.pending = await Promise.all(
-      res.pending.map(async (tx) => this.RustPendingTxToDbTx(tx))
-    );
-    return history;
+  async getTxHistoryByPubkey(pubkey: string) {
+    return this.txsDAL.getTxHistoryByPubkey(pubkey);
+  }
+
+  getTxHistoryByPubkeyBetweenBlocks(pubkey: string, from: number, to: number) {
+    return this.txsDAL.getTxHistoryByPubkeyBetweenBlocks(pubkey, +from, +to);
+  }
+
+  getTxHistoryByPubkeyBetweenTimes(pubkey: string, from: number, to: number) {
+    return this.txsDAL.getTxHistoryByPubkeyBetweenTimes(pubkey, +from, +to);
+  }
+
+  getTxHistoryMempool(pubkey: string) {
+    return this.txsDAL.getTxHistoryMempool(pubkey);
   }
 
   async getUDHistory(pubkey: string): Promise<{ history: HttpUD[] }> {
@@ -1594,17 +1654,19 @@ export class FileDAL implements ServerDAO {
     }
   }
 
-  async cleanCaches() {
-    await Underscore.values(this.newDals).map(
-      (dal: Initiable) => dal.cleanCache && dal.cleanCache()
+  cleanCaches() {
+    return Promise.all(
+      Underscore.values(this.dals)
+        .filter((dal: Initiable) => typeof dal.cleanCache === "function")
+        .map((dal: Initiable) => dal.cleanCache())
     );
   }
 
   async close() {
     await Promise.all(
-      Underscore.values(this.newDals).map(async (dal: Initiable) => {
+      Underscore.values(this.dals).map((dal: Initiable) => {
         dal.cleanCache();
-        await dal.close();
+        return dal.close();
       })
     );
     await this.sqliteDriver.closeConnection();
@@ -1617,7 +1679,7 @@ export class FileDAL implements ServerDAO {
   }
 
   getLogContent(linesQuantity: number) {
-    return new Promise((resolve, reject) => {
+    return new Promise<string[]>((resolve, reject) => {
       try {
         let lines: string[] = [],
           i = 0;

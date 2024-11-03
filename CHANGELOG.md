@@ -4,6 +4,18 @@
 
 ## [Unreleased] - ReleaseDate
 
+## [1.9.1] - 2024-11-03
+
+### Highlights
+- Merged BMA optimizations from version 1.8
+- Maintained Rust oxidation and GVA API
+- Improved overall performance
+
+### Features
+- Full support for BMA and GVA APIs
+- Progressive migration to Rust (oxidation)
+- BMA query optimizations
+
 ## [1.8.0] - 2020-03-12
 
 ### Highlights

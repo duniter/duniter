@@ -26,7 +26,7 @@ describe('WS2P Single Write limiter', () => {
     const source = new Readable()
     const protection = new WS2PSingleWriteStream(PROTECTION_DURATION)
     let nbDocs = 0
-    await new Promise(res => {
+    await new Promise<void>(res => {
       source
         .pipe(protection)
         .pipe(es.mapSync(() => {

@@ -13,14 +13,13 @@
 
 import * as levelup from "levelup";
 import { LevelUp } from "levelup";
-import { AbstractLevelDOWN, ErrorCallback } from "abstract-leveldown";
 import * as leveldown from "leveldown";
 import * as memdown from "memdown";
 
 export const LevelDBDriver = {
   newMemoryInstance: (): Promise<LevelUp> => {
     const impl: any = memdown.default();
-    return new Promise((res, rej) => {
+    return new Promise<LevelUp<any>>((res, rej) => {
       const db: LevelUp = levelup.default(impl, undefined, (err: Error) => {
         if (err) return rej(err);
         res(db);
@@ -30,7 +29,7 @@ export const LevelDBDriver = {
 
   newFileInstance: (path: string): Promise<LevelUp> => {
     const impl: any = leveldown.default(path);
-    return new Promise((res, rej) => {
+    return new Promise<LevelUp<any>>((res, rej) => {
       const db: LevelUp = levelup.default(impl, undefined, (err: Error) => {
         if (err) return rej(err);
         res(db);

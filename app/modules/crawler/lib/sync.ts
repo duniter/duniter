@@ -183,6 +183,13 @@ export class Synchroniser extends stream.Duplex {
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = askedCautious === true || localNumber >= 0;
 
+      // Disable check constraints
+      if (!cautious) await this.server.dal.disableCheckConstraints();
+
+      // Remove existing TX, because we will all download it again
+      // This is required to be able to insert, instead of save
+      if (fullSync) await this.dal.removeAllTxs();
+
       const milestonesStream = new ValidatorStream(
         localNumber,
         to,
@@ -211,7 +218,7 @@ export class Synchroniser extends stream.Duplex {
         this.watcher
       );
 
-      await new Promise((res, rej) => {
+      await new Promise<void>((res, rej) => {
         milestonesStream
           .pipe(download)
           .pipe(localIndexer)
@@ -225,7 +232,7 @@ export class Synchroniser extends stream.Duplex {
       this.watcher.storagePercent(100.0);
       this.watcher.appliedPercent(100.0);
 
-      this.server.dal.blockDAL.cleanCache();
+      await this.server.dal.cleanCaches();
 
       if (!cliprogram.nosbx) {
         //=======
@@ -253,6 +260,9 @@ export class Synchroniser extends stream.Duplex {
         );
       this.watcher.end();
       throw err;
+    } finally {
+      // Make sure to enable check constraints, even if failed
+      await this.server.dal.enableCheckConstraints();
     }
   }
 }

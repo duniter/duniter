@@ -165,7 +165,7 @@ export class BlockchainContext {
 
   async revertCurrentBlock(): Promise<DBBlock> {
     const head_1 = await this.dal.bindexDAL.head(1);
-    this.logger.debug("Reverting block #%s...", head_1.number);
+    this.logger.debug("Reverting block #%s-%s...", head_1.number, head_1.hash);
     const block = await this.dal.getAbsoluteValidBlockInForkWindow(
       head_1.number,
       head_1.hash

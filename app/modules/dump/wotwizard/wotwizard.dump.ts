@@ -53,6 +53,6 @@ export async function dumpWotWizard(server: Server) {
       Directory.GET_FILE_PATH(WotWizardConstants.DB_NAME_0),
       Directory.GET_FILE_PATH(WotWizardConstants.DB_NAME)
     );
-    fs.writeFileSync(updatingFile, Date.now());
+    fs.writeFileSync(updatingFile, String(Date.now()));
   }
 }

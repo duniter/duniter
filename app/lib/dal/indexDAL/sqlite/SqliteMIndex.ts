@@ -74,7 +74,10 @@ export class SqliteMIndex extends SqliteTable<MindexEntry>
     `);
   }
 
-  triggerInit(): void {}
+  async close(): Promise<void> {
+    await super.close();
+    await this.d2?.close();
+  }
 
   /**
    * INSERT

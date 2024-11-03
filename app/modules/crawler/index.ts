@@ -309,7 +309,11 @@ export const CrawlerDependency = {
                 ? [
                     {
                       endpoints: [
-                        ["BASIC_MERKLED_API", fromHost, fromPort].join(" "),
+                        [
+                          fromPort == "443" ? "BMAS" : "BASIC_MERKLED_API",
+                          fromHost,
+                          fromPort,
+                        ].join(" "),
                       ],
                     },
                   ]
@@ -358,7 +362,11 @@ export const CrawlerDependency = {
           const { host, port } = extractHostPort(from);
           try {
             const peer = PeerDTO.fromJSONObject({
-              endpoints: [["BASIC_MERKLED_API", host, port].join(" ")],
+              endpoints: [
+                [port == "443" ? "BMAS" : "BASIC_MERKLED_API", host, port].join(
+                  " "
+                ),
+              ],
             });
             const fromHost = peer.getHostPreferDNS();
             const fromPort = peer.getPort();
@@ -405,7 +413,11 @@ export const CrawlerDependency = {
           const { host, port } = extractHostPort(from);
           try {
             const peer = PeerDTO.fromJSONObject({
-              endpoints: [["BASIC_MERKLED_API", host, port].join(" ")],
+              endpoints: [
+                [port == "443" ? "BMAS" : "BASIC_MERKLED_API", host, port].join(
+                  " "
+                ),
+              ],
             });
             const fromHost = peer.getHostPreferDNS();
             const fromPort = peer.getPort();
@@ -460,7 +472,11 @@ export const CrawlerDependency = {
           const { host: toHost, port: toPort } = extractHostPort(target);
           try {
             const peer = PeerDTO.fromJSONObject({
-              endpoints: [["BASIC_MERKLED_API", host, port].join(" ")],
+              endpoints: [
+                [port == "443" ? "BMAS" : "BASIC_MERKLED_API", host, port].join(
+                  " "
+                ),
+              ],
             });
             logger.info("Looking at %s...", source);
             try {
@@ -485,7 +501,7 @@ export const CrawlerDependency = {
         },
       },
       {
-        name: "pull <from> [<number>]",
+        name: "pull <from> [<start>] [<end>]",
         desc: "Pull blocks from <from> source up to block <number>",
         onDatabaseExecute: async (
           server: Server,
@@ -494,7 +510,11 @@ export const CrawlerDependency = {
           params: any
         ) => {
           const source: string = params[0];
-          const to = parseInt(params[1]);
+          const to = parseInt(params[2] || params[1]);
+          let from: null | number = null;
+          if (params[2]) {
+            from = parseInt(params[1]);
+          }
           if (
             !source ||
             !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))
@@ -505,12 +525,17 @@ export const CrawlerDependency = {
           const { host, port } = extractHostPort(source);
           try {
             const peer = PeerDTO.fromJSONObject({
-              endpoints: [["BASIC_MERKLED_API", host, port].join(" ")],
+              endpoints: [
+                [port == "443" ? "BMAS" : "BASIC_MERKLED_API"].join(" "),
+              ],
             });
             logger.info("Looking at %s...", source);
             try {
               const fromHost = await connect(peer);
               let current: DBBlock | null = await server.dal.getCurrentBlockOrNull();
+              if (from) {
+                current = { number: from - 1 } as any;
+              }
               // Loop until an error occurs
               while (current && (isNaN(to) || current.number < to)) {
                 current = await fromHost.getBlock(current.number + 1);
@@ -746,7 +771,11 @@ export const CrawlerDependency = {
                 ? [
                     {
                       endpoints: [
-                        ["BASIC_MERKLED_API", fromHost, fromPort].join(" "),
+                        [
+                          fromPort == "443" ? "BMAS" : "BASIC_MERKLED_API",
+                          fromHost,
+                          fromPort,
+                        ].join(" "),
                       ],
                     },
                   ]

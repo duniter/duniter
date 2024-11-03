@@ -86,6 +86,8 @@ export class Server extends stream.Duplex implements HookableServer {
   keyPair:any
   sign:any
   blockchain:any
+  sqliteDBs: {[path: string]: SQLiteDriver} = {};
+  levelDBs: {[path: string]: LevelUp} = {};
 
   MerkleService:(req:any, merkle:any, valueCoroutine:any) => any
   IdentityService:IdentityService
@@ -159,12 +161,30 @@ export class Server extends stream.Duplex implements HookableServer {
   async plugFileSystem() {
     logger.debug('Plugging file system...');
     const params = await this.paramsP
-    this.dal = new FileDAL(params, async (dbName: string): Promise<SQLiteDriver> => {
-      return Directory.getHomeDB(this.memoryOnly, dbName, params.home)
-    }, async (dbName: string): Promise<LevelUp> => {
-      return Directory.getHomeLevelDB(this.memoryOnly, dbName, params.home)
-    }, )
+    this.dal = new FileDAL(params,
+        (dbName: string) => this.getSQLiteDB(dbName, params.home),
+        (dbName: string) => this.getLevelDB(dbName, params.home))
     await this.onPluggedFSHook()
+  }
+
+  async getSQLiteDB(dbName: string, home: string) {
+    // Check in cach (useful to avoid migration task to create a new driver on the same DB file)
+    let driver: SQLiteDriver = this.sqliteDBs[dbName];
+    if (!driver || driver.isClosed()) {
+      driver = await Directory.getHomeDB(this.memoryOnly, dbName, home);
+      if (!this.memoryOnly) this.sqliteDBs[dbName] = driver;
+    }
+    return driver;
+  }
+
+  async getLevelDB(dbName: string, home: string) {
+    // Check in cache (useful to avoid migration task to create a new driver on the same DB file)
+    let driver: LevelUp = this.levelDBs[dbName];
+    if (!driver || driver.isClosed()) {
+      driver = await Directory.getHomeLevelDB(this.memoryOnly, dbName, home);
+      if (!this.memoryOnly) this.levelDBs[dbName] = driver;
+    }
+    return driver;
   }
 
   async unplugFileSystem() {
@@ -523,6 +543,12 @@ export class Server extends stream.Duplex implements HookableServer {
     if (this.dal) {
       await this.dal.close()
     }
+    await Promise.all(Object.values(this.sqliteDBs)
+        .filter(db => db && !db.isClosed())
+        .map(db => db.closeConnection()));
+    await Promise.all(Object.values(this.levelDBs)
+        .filter(db => db && !db.isClosed())
+        .map(db => db.close()));
   }
 
   revert() {

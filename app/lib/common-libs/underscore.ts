@@ -92,8 +92,8 @@ export const Underscore = {
     return _underscore_.extend(t1, t2);
   },
 
-  range: (count: number, end?: number): number[] => {
-    return _underscore_.range(count, end);
+  range: (count: number, end?: number, step?: number): number[] => {
+    return _underscore_.range(count, end, step);
   },
 
   chain: <T>(element: T[]): UnderscoreClass<T> => {

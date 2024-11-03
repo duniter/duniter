@@ -3,11 +3,6 @@ import { DBWallet } from "../../../db/DBWallet";
 
 export interface WalletDAO extends Initiable {
   /**
-   * Trigger the initialization of the DAO. Called when the underlying DB is ready.
-   */
-  triggerInit(): void;
-
-  /**
    * Saves a wallet.
    * @param {DBWallet} wallet
    * @returns {Promise<DBWallet>}

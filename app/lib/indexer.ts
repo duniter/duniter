@@ -600,6 +600,10 @@ export class Indexer {
 
     const HEAD_1 = await head(1);
 
+    // CHECK Bindex is valid
+    if (HEAD_1 && HEAD_1.number !== HEAD.number - 1)
+      throw new Error("Invalid bindex: cannot found HEAD-1!");
+
     // BR_G04
     await Indexer.prepareIssuersCount(HEAD, range, HEAD_1);
 
@@ -2436,7 +2440,7 @@ export function reduceForDBTrimming<T extends { writtenOn: number }>(
 
 export function reduce<T>(records: T[]): T {
   return records.reduce((obj: T, record) => {
-    const keys = Object.keys(record) as (keyof T)[];
+    const keys = Underscore.keys<T>(record);
     for (const k of keys) {
       if (record[k] !== undefined && record[k] !== null) {
         obj[k] = record[k];

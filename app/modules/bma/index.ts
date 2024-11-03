@@ -21,6 +21,7 @@ import { BMALimitation } from "./lib/limiter";
 import { PeerDTO } from "../../lib/dto/PeerDTO";
 import { Underscore } from "../../lib/common-libs/underscore";
 import { bma } from "./lib/bma";
+import { Router } from "./lib/routing";
 
 const Q = require("q");
 const rp = require("request-promise");
@@ -89,7 +90,11 @@ export const BmaDependency = {
     },
 
     config: {
-      onLoading: async (conf: NetworkConfDTO, program: any, logger: any) => {
+      onLoading: async (
+        conf: Partial<NetworkConfDTO>,
+        program: any,
+        logger: any
+      ) => {
         // If the usage of BMA hasn't been defined yet
         if (conf.nobma === undefined) {
           // Do we have an existing BMA conf?
@@ -186,7 +191,7 @@ export const BmaDependency = {
         }
       },
 
-      beforeSave: async (conf: NetworkConfDTO, program: any) => {
+      beforeSave: async (conf: Partial<NetworkConfDTO>, program: any) => {
         if (!conf.ipv4) delete conf.ipv4;
         if (!conf.ipv6) delete conf.ipv6;
         if (!conf.remoteipv4) delete conf.remoteipv4;
@@ -228,9 +233,6 @@ export const BmaDependency = {
           server.addEndpointsDefinitions(() =>
             Promise.resolve(getEndpoint(conf))
           );
-          server.addWrongEndpointFilter((endpoints: string[]) =>
-            getWrongEndpoints(endpoints, server.conf.pair.pub)
-          );
         }
         return new BMAPI(server, conf, logger);
       },
@@ -243,10 +245,19 @@ export const BmaDependency = {
         interfaces: NetworkInterface[] | null = null,
         httpLogs = false,
         logger?: any
-      ) => bma(server, interfaces, httpLogs, logger),
+      ) => {
+        // Keep BMA optimizations from 1.8
+        server.useOptimizedQueries = true
+        
+        // Add GVA API support
+        server.gvaEnabled = true
+        
+        return new Router(server)
+      },
       dtos,
-      getMainEndpoint: (conf: NetworkConfDTO) =>
-        Promise.resolve(getEndpoint(conf)),
+      getMainEndpoint: (conf: NetworkConfDTO) => {
+        return BMAConstants.getMainEndpoint(conf)
+      }
     },
   },
 };
@@ -254,22 +265,26 @@ export const BmaDependency = {
 async function getWrongEndpoints(endpoints: string[], selfPubkey: string) {
   const wrongs: string[] = [];
   await Promise.all(
-    endpoints.map(async (theEndpoint: string) => {
-      let remote = PeerDTO.endpoint2host(theEndpoint);
-      try {
-        // We test only BMA APIs, because other may exist and we cannot judge against them
-        if (theEndpoint.startsWith("BASIC_MERKLED_API")) {
-          let answer = await rp("http://" + remote + "/network/peering", {
-            json: true,
-          });
+    endpoints
+      .filter(PeerDTO.isBMA) // We test only BMA APIs, because other may exist and we cannot judge against them
+      .map(async (ep: string) => {
+        const peer = PeerDTO.fromJSONObject({ endpoints: [ep] });
+        try {
+          const protocol =
+            ep.startsWith("BMAS") || peer.getPort() == 443 ? "https" : "http";
+          const answer = await rp(
+            protocol + "://" + peer.getURL() + "/network/peering",
+            {
+              json: true,
+            }
+          );
           if (!answer || answer.pubkey != selfPubkey) {
             throw Error("Not same pubkey as local instance");
           }
+        } catch (e) {
+          wrongs.push(ep);
         }
-      } catch (e) {
-        wrongs.push(theEndpoint);
-      }
-    })
+      })
   );
   return wrongs;
 }

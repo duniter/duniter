@@ -135,7 +135,7 @@ export const KeypairDependency = {
       },
 
       beforeSave: async (
-        conf: KeypairConfDTO,
+        conf: Partial<KeypairConfDTO>,
         program: any,
         logger: any,
         confDAL: any
@@ -150,9 +150,12 @@ export const KeypairDependency = {
         delete conf.oldPair;
 
         // We save the key in a separate file
-        const keyring =
-          'pub: "' + conf.pair.pub + '"\n' + 'sec: "' + conf.pair.sec + '"';
-        await confDAL.coreFS.write("keyring.yml", keyring, false, true);
+        if (conf.pair?.pub && conf.pair?.sec) {
+          const keyring = 'pub: "' + conf.pair.pub + '"\n' + 'sec: "' + conf.pair.sec + '"';
+          await confDAL.coreFS.write("keyring.yml", keyring, false, true);
+        } else {
+          logger.warn("No valid keypair to save");
+        }
 
         // We never want to store salt, password or keypair in the conf.json file
         delete conf.salt;

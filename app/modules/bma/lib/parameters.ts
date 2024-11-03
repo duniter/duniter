@@ -96,6 +96,16 @@ export class ParametersService {
     callback(null, matches[0]);
   };
 
+  static getIsPubkey(req: any): boolean {
+    const value = req.query.pubkey;
+    return (
+      value !== null &&
+      value !== undefined &&
+      value !== "false" &&
+      value !== false
+    );
+  }
+
   static getPubkeyP(req: any) {
     return Q.nbind(ParametersService.getPubkey, this)(req);
   }

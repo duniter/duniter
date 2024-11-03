@@ -13,7 +13,7 @@
 
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {HttpMerkleOfPeers} from "../../../app/modules/bma/lib/dtos"
-import {NewTestingServer} from "../tools/toolbox"
+import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {expectAnswer, expectHttpCode} from "../tools/http-expect"
 
 const rp        = require('request-promise');
@@ -28,34 +28,37 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = NewTestingServer(Underscore.extend({
-  name: 'bb33',
-  ipv4: '127.0.0.1',
-  port: '20501',
-  remoteport: '20501',
-  ws2p: { upnp: false },
-  pair: {
-    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-  },
-  rootoffset: 10,
-  sigQty: 1, dt: 0, ud0: 120
-}, commonConf));
-
-const s2 = NewTestingServer(Underscore.extend({
-  name: 'bb12',
-  port: '20502',
-  remoteport: '20502',
-  ws2p: { upnp: false },
-  pair: {
-    pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
-    sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
-  }
-}, commonConf));
-
 describe("Network Merkle", function() {
 
+  let s1: TestingServer, s2: TestingServer;
+
   before(async () => {
+
+    s1 = NewTestingServer(Underscore.extend({
+      name: 'bb33',
+      ipv4: '127.0.0.1',
+      port: '20501',
+      remoteport: '20501',
+      ws2p: { upnp: false },
+      pair: {
+        pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+        sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+      },
+      rootoffset: 10,
+      sigQty: 1, dt: 0, ud0: 120
+    }, commonConf));
+
+    s2 = NewTestingServer(Underscore.extend({
+      name: 'bb12',
+      port: '20502',
+      remoteport: '20502',
+      ws2p: { upnp: false },
+      pair: {
+        pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
+        sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
+      }
+    }, commonConf));
+
     await s1.initDalBmaConnections()
     await s2.initDalBmaConnections()
     await s1._server.PeeringService.generateSelfPeer(s1._server.conf, 0)

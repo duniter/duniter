@@ -31,10 +31,6 @@ export class LevelDBDividend extends LevelDBTable<DividendEntry>
    * TECHNICAL
    */
 
-  cleanCache(): void {}
-
-  triggerInit(): void {}
-
   async init(): Promise<void> {
     await super.init();
     this.indexForTrimming = new LevelDBTable<string[]>(

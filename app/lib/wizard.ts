@@ -33,7 +33,7 @@ export class Wizard {
 }
 
 function doTasks(todos: string[], conf: ConfDTO) {
-  return new Promise((res, rej) => {
+  return new Promise<void>((res, rej) => {
     async.forEachSeries(
       todos,
       function (task: any, callback: any) {

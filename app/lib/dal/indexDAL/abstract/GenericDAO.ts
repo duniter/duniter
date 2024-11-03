@@ -2,11 +2,6 @@ import { Initiable } from "../../sqliteDAL/Initiable";
 
 export interface GenericDAO<T> extends Initiable {
   /**
-   * Trigger the initialization of the DAO. Called when the underlying DB is ready.
-   */
-  triggerInit(): void;
-
-  /**
    * Make a generic find with some ordering.
    * @param criterion Criterion object, LokiJS's find object format.
    * @param sort A LokiJS's compunded sort object.

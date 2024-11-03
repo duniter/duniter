@@ -83,11 +83,10 @@ export class P2pCandidate {
     return (this.api && this.api.hostName) || "NO_API";
   }
 
-  async downloadBlocks(count: number, from: number) {
+  async downloadBlocks(count: number, from: number): Promise<BlockDTO[]> {
     const start = Date.now();
-    let error: Error | undefined;
     this.reserved = false;
-    this.dlPromise = querablep(
+    const promise = querablep(
       (async () => {
         // We try to download the blocks
         let blocks: BlockDTO[] = [];
@@ -110,6 +109,12 @@ export class P2pCandidate {
             break;
           }
         }
+        
+        // Ajouter la vérification supplémentaire de 1.8
+        if (!blocks || blocks.length != count) {
+          throw new Error("Wrong number of blocks from " + this.hostName);
+        }
+        
         this.responseTimes.push(Date.now() - start);
         // Only keep a flow of 5 ttas for the node
         if (this.responseTimes.length > 5) this.responseTimes.shift();
@@ -117,7 +122,8 @@ export class P2pCandidate {
         return blocks;
       })()
     );
-    return this.dlPromise;
+    this.dlPromise = promise;
+    return promise;
   }
 
   private getRemoteAPIs() {
@@ -130,6 +136,7 @@ export class P2pCandidate {
         isBMA: true,
         port: bmaAPI.port,
         host: bmaHost,
+        path: bmaAPI.path,
       });
     }
     if (ws2pAPI) {

@@ -1,4 +1,9 @@
-import { FullIindexEntry, IindexEntry, Indexer } from "../../../indexer";
+import {
+  FullIindexEntry,
+  IindexEntry,
+  Indexer,
+  reduce,
+} from "../../../indexer";
 import { SQLiteDriver } from "../../drivers/SQLiteDriver";
 import { MonitorExecutionTime } from "../../../debug/MonitorExecutionTime";
 import { IIndexDAO } from "../abstract/IIndexDAO";
@@ -18,11 +23,11 @@ export class SqliteIIndex extends SqliteTable<IindexEntry>
       {
         op: new SqlNotNullableFieldDefinition("CHAR", false, 6),
         pub: new SqlNotNullableFieldDefinition("VARCHAR", true, 50),
-        written_on: new SqlNotNullableFieldDefinition("VARCHAR", false, 80),
+        written_on: new SqlNotNullableFieldDefinition("VARCHAR", true, 80),
         writtenOn: new SqlNotNullableFieldDefinition("INT", true),
         created_on: new SqlNullableFieldDefinition("VARCHAR", false, 80),
         uid: new SqlNullableFieldDefinition("VARCHAR", true, 100),
-        hash: new SqlNullableFieldDefinition("VARCHAR", false, 70),
+        hash: new SqlNullableFieldDefinition("VARCHAR", true, 70),
         sig: new SqlNullableFieldDefinition("VARCHAR", false, 100),
         member: new SqlNullableFieldDefinition("BOOLEAN", true),
         wasMember: new SqlNullableFieldDefinition("BOOLEAN", true),
@@ -38,8 +43,6 @@ export class SqliteIIndex extends SqliteTable<IindexEntry>
    */
 
   cleanCache(): void {}
-
-  triggerInit(): void {}
 
   /**
    * INSERT
@@ -210,6 +213,18 @@ export class SqliteIIndex extends SqliteTable<IindexEntry>
   @MonitorExecutionTime()
   async getFullFromUID(uid: string): Promise<FullIindexEntry> {
     return (await this.getFromUID(uid)) as FullIindexEntry;
+  }
+
+  @MonitorExecutionTime()
+  async getOldFromPubkey(pub: string): Promise<OldIindexEntry | null> {
+    const entries = await this.find(
+      "SELECT * FROM iindex WHERE pub = ? order by writtenOn ASC",
+      [pub]
+    );
+    if (!entries.length) {
+      return null;
+    }
+    return OldTransformers.toOldIindexEntry(reduce(entries));
   }
 
   @MonitorExecutionTime()

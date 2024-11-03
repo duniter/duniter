@@ -110,18 +110,29 @@ var mocks = {
   }
 };
 
-let fileDAL:FileDAL
+let conf: ConfDTO;
+let fileDAL:FileDAL;
 
 describe("DAL", function(){
 
   before(async () => {
+    conf = ConfDTO.complete({
+      currency: "meta_brouzouf",
+      storage: {
+        transactions: true
+      }
+    });
     let params = await Directory.getHomeParams(true, 'db0');
     fileDAL = new FileDAL(params, async (name: string) => Directory.getHomeDB(true, name), async (name: string) => Directory.getHomeLevelDB(true, name));
-    await fileDAL.init({} as any);
-    return fileDAL.saveConf({ currency: "meta_brouzouf" } as any);
+    await fileDAL.init(conf);
+    return fileDAL.saveConf(conf);
   })
 
-  it('should have DB version 21', async () => {
+  after(() => {
+    return fileDAL.close();
+  })
+
+  it('should have last DB version', async () => {
     let version = await fileDAL.getDBVersion();
     should.exist(version);
     version.should.equal(constants.CURRENT_DB_VERSION);
@@ -159,35 +170,40 @@ describe("DAL", function(){
   });
 
   it('should be able to save a Block', async () => {
-    await fileDAL.saveBlock(DBBlock.fromBlockDTO(BlockDTO.fromJSONObject(mocks.block0)), ConfDTO.mock());
-    let block = (await fileDAL.getFullBlockOf(0)) as DBBlock
-    block.should.have.property('hash').equal(mocks.block0.hash);
-    block.should.have.property('signature').equal(mocks.block0.signature);
-    block.should.have.property('version').equal(mocks.block0.version);
-    block.should.have.property('currency').equal(mocks.block0.currency);
-    block.should.have.property('issuer').equal(mocks.block0.issuer);
-    block.should.have.property('parameters').equal(mocks.block0.parameters);
-    block.should.have.property('previousHash').equal(mocks.block0.previousHash);
-    block.should.have.property('previousIssuer').equal(mocks.block0.previousIssuer);
-    block.should.have.property('membersCount').equal(mocks.block0.membersCount);
-    block.should.have.property('monetaryMass').equal(mocks.block0.monetaryMass);
-    block.should.have.property('medianTime').equal(mocks.block0.medianTime);
-    block.should.have.property('dividend').equal(mocks.block0.dividend);
-    block.should.have.property('unitbase').equal(mocks.block0.unitbase);
-    block.should.have.property('time').equal(mocks.block0.time);
-    block.should.have.property('powMin').equal(mocks.block0.powMin);
-    block.should.have.property('number').equal(mocks.block0.number);
-    block.should.have.property('nonce').equal(mocks.block0.nonce);
+    const block = DBBlock.fromBlockDTO(BlockDTO.fromJSONObject({
+      ...mocks.block0,
+      fork: false
+    }));
+    
+    await fileDAL.saveBlock(block, conf);
+    
+    let savedBlock = (await fileDAL.getFullBlockOf(0)) as DBBlock;
+    savedBlock.should.have.property('hash').equal(mocks.block0.hash);
+    savedBlock.should.have.property('signature').equal(mocks.block0.signature);
+    savedBlock.should.have.property('version').equal(mocks.block0.version);
+    savedBlock.should.have.property('currency').equal(mocks.block0.currency);
+    savedBlock.should.have.property('issuer').equal(mocks.block0.issuer);
+    savedBlock.should.have.property('parameters').equal(mocks.block0.parameters);
+    savedBlock.should.have.property('previousHash').equal(mocks.block0.previousHash);
+    savedBlock.should.have.property('previousIssuer').equal(mocks.block0.previousIssuer);
+    savedBlock.should.have.property('membersCount').equal(mocks.block0.membersCount);
+    savedBlock.should.have.property('monetaryMass').equal(mocks.block0.monetaryMass);
+    savedBlock.should.have.property('medianTime').equal(mocks.block0.medianTime);
+    savedBlock.should.have.property('dividend').equal(mocks.block0.dividend);
+    savedBlock.should.have.property('unitbase').equal(mocks.block0.unitbase);
+    savedBlock.should.have.property('time').equal(mocks.block0.time);
+    savedBlock.should.have.property('powMin').equal(mocks.block0.powMin);
+    savedBlock.should.have.property('number').equal(mocks.block0.number);
+    savedBlock.should.have.property('nonce').equal(mocks.block0.nonce);
 
-    //assert.deepEqual(block, mocks.block0);
-    assert.deepEqual(block.identities, mocks.block0.identities);
-    assert.deepEqual(block.certifications, mocks.block0.certifications);
-    assert.deepEqual(block.actives, mocks.block0.actives);
-    assert.deepEqual(block.revoked, mocks.block0.revoked);
-    assert.deepEqual(block.excluded, mocks.block0.excluded);
-    assert.deepEqual(block.leavers, mocks.block0.leavers);
-    assert.deepEqual(block.actives, mocks.block0.actives);
-    assert.deepEqual(block.joiners, mocks.block0.joiners);
-    assert.deepEqual(block.transactions, mocks.block0.transactions);
+    assert.deepEqual(savedBlock.identities, mocks.block0.identities);
+    assert.deepEqual(savedBlock.certifications, mocks.block0.certifications);
+    assert.deepEqual(savedBlock.actives, mocks.block0.actives);
+    assert.deepEqual(savedBlock.revoked, mocks.block0.revoked);
+    assert.deepEqual(savedBlock.excluded, mocks.block0.excluded);
+    assert.deepEqual(savedBlock.leavers, mocks.block0.leavers);
+    assert.deepEqual(savedBlock.actives, mocks.block0.actives);
+    assert.deepEqual(savedBlock.joiners, mocks.block0.joiners);
+    assert.deepEqual(savedBlock.transactions, mocks.block0.transactions);
   });
 });

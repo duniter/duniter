@@ -12,12 +12,18 @@ import { SIndexDAO } from "../abstract/SIndexDAO";
 import { Underscore } from "../../../common-libs/underscore";
 import { pint } from "../../../common-libs/pint";
 import { arrayPruneAllCopy } from "../../../common-libs/array-prune";
+import { CommonConstants } from "../../../common-libs/constants";
 
 export class LevelDBSindex extends LevelDBTable<SindexEntry>
   implements SIndexDAO {
+  // Remembers what sources (identifier-pos, e.g. E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855-0) were either created and/or consumed at a given block number
   private indexForTrimming: LevelDBTable<string[]>;
+  // Remembers what sources (identifier-pos, e.g. E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855-0) were consumed at a given block number
   private indexForConsumed: LevelDBTable<string[]>;
+  // Remembers what sources (identifier-pos, e.g. E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855-0) are involved in a simple condition (e.g. "SIG(pubkey)")
   private indexForConditions: LevelDBTable<string[]>;
+  // Remembers what sources (identifier-pos, e.g. E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855-0) are involved in a complex condition (e.g. "SIG(pubkey) OR CSV(1000)")
+  private indexOfComplexeConditionForPubkeys: LevelDBTable<string[]>;
 
   constructor(protected getLevelDB: (dbName: string) => Promise<LevelUp>) {
     super("level_sindex", getLevelDB);
@@ -41,9 +47,14 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       "level_sindex/conditions",
       this.getLevelDB
     );
+    this.indexOfComplexeConditionForPubkeys = new LevelDBTable<string[]>(
+      "level_sindex/complex_condition_pubkeys",
+      this.getLevelDB
+    );
     await this.indexForTrimming.init();
     await this.indexForConsumed.init();
     await this.indexForConditions.init();
+    await this.indexOfComplexeConditionForPubkeys.init();
   }
 
   async close(): Promise<void> {
@@ -51,6 +62,7 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     await this.indexForTrimming.close();
     await this.indexForConsumed.close();
     await this.indexForConditions.close();
+    await this.indexOfComplexeConditionForPubkeys.close();
   }
 
   /**
@@ -127,14 +139,14 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       pos: number;
     }[]
   > {
-    // TODO: very costly: needs a full scan, would be better to change this implementatio
-    const entries = await this.findWhere((e) =>
-      e.conditions.includes(`SIG(${pubkey})`)
+    const forSimpleConditions = await this.getForConditions(`SIG(${pubkey})`);
+    const forComplexConditions = await this.getForComplexeConditionPubkey(
+      pubkey
     );
-    const reduced = Indexer.DUP_HELPERS.reduceBy(entries, [
-      "identifier",
-      "pos",
-    ]);
+    const reduced = Indexer.DUP_HELPERS.reduceBy(
+      forSimpleConditions.concat(forComplexConditions),
+      ["identifier", "pos"]
+    );
     return reduced.filter((r) => !r.consumed);
   }
 
@@ -163,17 +175,25 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     return entries;
   }
 
+  /**
+   * Trims (i.e. removes definitively) some sources from sindex.
+   * N.B: we only trim *consumed sources* because a source is exclusively a two entries operation: CREATE then UPDATE.
+   * So a source without UPDATE is not to be trimmed, because it has never been consumed.
+   * Looking into `indexForConsumed` is therefore an optimisation to avoid checking `CREATE` sources which cannot be trimmed.
+   * @param belowNumber Trim all the UPDATE sources written below `belowNumber` block.
+   */
   async trimConsumedSource(belowNumber: number): Promise<void> {
     let belowNumberIds: string[] = [];
     const mapIds: {
       [k: string]: {
+        createdOn: number;
+        updatedOn: number;
         conditions: string;
-        writtenOn: number;
       };
     } = {};
     const mapIds2WrittenOn: { [k: string]: number } = {};
 
-    // First: we look at what was written before `belowNumber`
+    // First: we look at what was consumed before `belowNumber`
     await this.indexForConsumed.readAllKeyValue(
       async (kv) => {
         belowNumberIds = belowNumberIds.concat(kv.value);
@@ -191,26 +211,34 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       // Remove consumed sources
       const identifier = id.split("-")[0];
       const pos = pint(id.split("-")[1]);
-      const entry = await this.getOrNull(
-        LevelDBSindex.trimKey(identifier, pos, true)
-      );
-      if (entry && entry.writtenOn < belowNumber) {
+      const createKey = LevelDBSindex.trimKey(identifier, pos, false);
+      const createRecord = await this.getOrNull(createKey);
+      const updateKey = LevelDBSindex.trimKey(identifier, pos, true);
+      const updateRecord = await this.getOrNull(updateKey);
+      if (
+        createRecord &&
+        updateRecord &&
+        updateRecord.writtenOn < belowNumber
+      ) {
         // We remember the trimmed source id to remove it from the writtenOn and conditions index
         mapIds[id] = {
-          writtenOn: mapIds2WrittenOn[id],
-          conditions: entry.conditions,
+          createdOn: createRecord.writtenOn,
+          updatedOn: updateRecord.writtenOn,
+          conditions: updateRecord.conditions,
         };
-        await this.del(LevelDBSindex.trimKey(identifier, pos, false));
-        await this.del(LevelDBSindex.trimKey(identifier, pos, true));
+        // Remove both the source CREATE (availability) and UPDATE (consumption) from sindex
+        await this.del(createKey);
+        await this.del(updateKey);
       }
     }
 
-    // We update indexes
+    // We update sub-indexes
     for (const id of Underscore.keys(mapIds).map(String)) {
       const map = mapIds[id];
       await this.trimConditions(map.conditions, id);
-      await this.trimConsumed(map.writtenOn, id);
-      await this.trimWrittenOn(map.writtenOn, id);
+      await this.trimConsumed(map.updatedOn, id);
+      await this.trimWrittenOn(map.createdOn, id);
+      await this.trimWrittenOn(map.updatedOn, id);
     }
   }
 
@@ -269,6 +297,20 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     return found;
   }
 
+  async getForComplexeConditionPubkey(pubkey: string): Promise<SindexEntry[]> {
+    const ids =
+      (await this.indexOfComplexeConditionForPubkeys.getOrNull(pubkey)) || [];
+    const found: SindexEntry[] = [];
+    for (const id of ids) {
+      const entries = await this.findByIdentifierAndPos(
+        id.split("-")[0],
+        pint(id.split("-")[1])
+      );
+      entries.forEach((e) => found.push(e));
+    }
+    return found;
+  }
+
   async removeBlock(blockstamp: string): Promise<void> {
     const writtenOn = pint(blockstamp);
     // We look at records written on this blockstamp: `indexForTrimming` allows to get them
@@ -288,7 +330,8 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       const updateRecord = await this.getOrNull(updateKey);
       // Undo consumption
       if (updateRecord && updateRecord.writtenOn === writtenOn) {
-        conditions.push(updateRecord.conditions);
+        // Delete from condition index only if no createRecord exists - fix #1446
+        if (!createRecord) conditions.push(updateRecord.conditions);
         await this.del(updateKey);
       }
       // Undo creation?
@@ -296,11 +339,10 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
         conditions.push(createRecord.conditions);
         await this.del(createKey);
       }
-      // Update balance
-      // 1. Conditions
+      // Update condition index
       const uniqConditions = Underscore.uniq(conditions);
       for (const condition of uniqConditions) {
-        // Remove this source from the balance
+        // Remove this source from the condition
         await this.trimConditions(condition, id);
       }
     }
@@ -315,33 +357,55 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     }
   }
 
+  /**
+   * Allow to get internal index, for unit test (see test triming-dal.ts)
+   */
+  getInternalIndexes(): LevelDBTable<any>[] {
+    return [
+      this.indexForTrimming,
+      this.indexForConditions,
+      this.indexForConsumed,
+      this.indexOfComplexeConditionForPubkeys,
+    ];
+  }
+  getIndexForTrimming(): LevelDBTable<any> {
+    return this.indexForTrimming;
+  }
+  getIndexForConditions(): LevelDBTable<any> {
+    return this.indexForConditions;
+  }
+  getIndexForConsumed(): LevelDBTable<any> {
+    return this.indexForConsumed;
+  }
+
   private async trimConditions(condition: string, id: string) {
-    // Get all the account's TX sources
+    // Get all the condition's sources
     const existing = (await this.indexForConditions.getOrNull(condition)) || [];
-    // Prune the source from the account
+    // Prune the source from the condition
     const trimmed = arrayPruneAllCopy(existing, id);
     if (trimmed.length) {
-      // If some sources are left for this "account", persist what remains
+      // If some sources are left for this "condition", persist what remains
       await this.indexForConditions.put(condition, trimmed);
     } else {
-      // Otherwise just delete the "account"
+      // Otherwise just delete the "condition"
       await this.indexForConditions.del(condition);
+    }
+
+    // If complex conditions
+    if (this.isComplexCondition(condition)) {
+      const pubkeys = this.getDistinctPubkeysFromCondition(condition);
+      await this.trimComplexeConditionPubkeys(pubkeys, id);
     }
   }
 
-  /**
-   * Duplicate with trimConditions?!
-   * @param writtenOn
-   * @param id
-   */
   private async trimWrittenOn(writtenOn: number, id: string) {
     const k = LevelDBSindex.trimWrittenOnKey(writtenOn);
     const existing = await this.getWrittenOnSourceIds(writtenOn);
     const trimmed = arrayPruneAllCopy(existing, id);
     if (trimmed.length) {
-      await this.indexForConditions.put(k, trimmed);
+      await this.indexForTrimming.put(k, trimmed);
     } else {
-      await this.indexForConditions.del(k);
+      await this.indexForTrimming.del(k);
     }
   }
 
@@ -353,6 +417,28 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       await this.indexForConsumed.put(k, trimmed);
     } else {
       await this.indexForConsumed.del(k);
+    }
+  }
+
+  private async trimComplexeConditionPubkeys(pubkeys: string[], id: string) {
+    if (!pubkeys || !pubkeys.length) return;
+    for (const p of pubkeys) {
+      await this.trimComplexeConditionPubkey(p, id);
+    }
+  }
+
+  private async trimComplexeConditionPubkey(pubkey: string, id: string) {
+    // Get all the condition's sources
+    const existing =
+      (await this.indexOfComplexeConditionForPubkeys.getOrNull(pubkey)) || [];
+    // Prune the source from the condition
+    const trimmed = arrayPruneAllCopy(existing, id);
+    if (trimmed.length) {
+      // If some sources are left for this "condition", persist what remains
+      await this.indexOfComplexeConditionForPubkeys.put(pubkey, trimmed);
+    } else {
+      // Otherwise just delete the "account"
+      await this.indexOfComplexeConditionForPubkeys.del(pubkey);
     }
   }
 
@@ -393,6 +479,7 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     const byConsumed: { [k: number]: SindexEntry[] } = {};
     const byWrittenOn: { [k: number]: SindexEntry[] } = {};
     const byConditions: { [k: string]: SindexEntry[] } = {};
+    const byPubkeys: { [k: string]: SindexEntry[] } = {};
     records
       .filter((r) => r.consumed)
       .forEach((r) => {
@@ -410,12 +497,24 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
         arrWO = byWrittenOn[r.writtenOn] = [];
       }
       arrWO.push(r);
-      // Conditiosn
+      // Conditions
       let arrCN = byConditions[r.conditions];
       if (!arrCN) {
         arrCN = byConditions[r.conditions] = [];
       }
       arrCN.push(r);
+
+      // If complex condition
+      if (this.isComplexCondition(r.conditions)) {
+        const pubkeys = this.getDistinctPubkeysFromCondition(r.conditions);
+        pubkeys.forEach((pub) => {
+          let arrPub = byPubkeys[pub];
+          if (!arrPub) {
+            arrPub = byPubkeys[pub] = [];
+          }
+          arrPub.push(r);
+        });
+      }
     });
     // Index consumed => (identifier + pos)[]
     for (const k of Underscore.keys(byConsumed)) {
@@ -446,5 +545,47 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
         Underscore.uniq(existing.concat(newSources))
       );
     }
+    // Index pubkeys => (identifier + pos)[]
+    for (const k of Underscore.keys(byPubkeys).map(String)) {
+      const existing =
+        (await this.indexOfComplexeConditionForPubkeys.getOrNull(k)) || [];
+      const newSources = byPubkeys[k].map((r) =>
+        LevelDBSindex.trimPartialKey(r.identifier, r.pos)
+      );
+      await this.indexOfComplexeConditionForPubkeys.put(
+        k,
+        Underscore.uniq(existing.concat(newSources))
+      );
+    }
+  }
+
+  private isComplexCondition(condition: string): boolean {
+    return (
+      (condition &&
+        !CommonConstants.TRANSACTION.OUTPUT_CONDITION_SIG_PUBKEY_UNIQUE.test(
+          condition
+        )) ||
+      false
+    );
+  }
+  /**
+   * Get all pubkeys used by an output condition (e.g. 'SIG(A) && SIG(B)' will return ['A', 'B']
+   * @param condition
+   * @private
+   */
+  private getDistinctPubkeysFromCondition(condition: string): string[] {
+    const pubKeys: string[] = [];
+    if (!condition) return pubKeys;
+    let match: RegExpExecArray | null;
+    while (
+      (match = CommonConstants.TRANSACTION.OUTPUT_CONDITION_SIG_PUBKEY.exec(
+        condition
+      )) !== null
+    ) {
+      pubKeys.push(match[1]);
+      condition = condition.substring(match.index + match[0].length);
+    }
+
+    return Underscore.uniq(pubKeys);
   }
 }

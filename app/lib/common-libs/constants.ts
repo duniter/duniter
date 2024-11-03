@@ -53,8 +53,8 @@ const CONDITIONS =
   "\\)|CSV\\(" +
   CSV_INTEGER +
   "\\))))*";
-
-const BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
+const CONDITION_SIG_PUBKEY = "SIG\\((" + PUBKEY + ")\\)";
+const BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))( (\/.+))?$/;
 const BMAS_REGEXP = /^BMAS( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))( (\/.+))?$/;
 const BMATOR_REGEXP = /^BMATOR( ([a-z0-9]{16})\.onion)( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 const WS2P_REGEXP = /^WS2P (?:[1-9][0-9]* )?([a-f0-9]{8}) ([a-z_][a-z0-9-_.]*|[0-9.]+|[0-9a-f:]+) ([0-9]+)(?: (.+))?$/;
@@ -535,6 +535,8 @@ export const CommonConstants = {
     LOCKTIME: find("Locktime: (" + INTEGER + ")"),
     INLINE_COMMENT: exact(COMMENT),
     OUTPUT_CONDITION: exact(CONDITIONS),
+    OUTPUT_CONDITION_SIG_PUBKEY: find(CONDITION_SIG_PUBKEY),
+    OUTPUT_CONDITION_SIG_PUBKEY_UNIQUE: exact(CONDITION_SIG_PUBKEY),
   },
   PEER: {
     BLOCK: find("Block: (" + INTEGER + "-" + FINGERPRINT + ")"),
@@ -548,6 +550,7 @@ export const CommonConstants = {
   MILESTONES_PER_PAGE: 50,
   CHUNK_PREFIX: "chunk_",
   BLOCKS_IN_MEMORY_MAX: 288 * 60, // 288 = 1 day
+  MAX_SQLITE_WRITE_PENDINGS: 200,
 
   MAX_AGE_OF_PEER_IN_BLOCKS: 200, // blocks
   INITIAL_DOWNLOAD_SLOTS: 1, // 1 peer

@@ -77,7 +77,7 @@ export class BlockDAL extends AbstractSQLite<DBBlock> {
         "transactions",
       ],
       // Booleans
-      ["wrong", "legacy"],
+      ["legacy"],
       // BigIntegers
       ["monetaryMass"],
       // Transient

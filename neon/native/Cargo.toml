@@ -12,13 +12,14 @@ name = "duniteroxyde"
 crate-type = ["cdylib"]
 
 [build-dependencies]
-neon-build = "0.4.0"
+neon-build = "0.10.0"
 
 [dependencies]
 bincode = "1.2.1"
 bs58 = "0.3.0"
-duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer"] }
-duniter-server = { path = "../../rust-libs/duniter-server" }
+duniter-core = "1.9.1"
+duniter-gva = "1.9.0"
+duniter-bma = "1.9.1"
 flate2 = { version = "1.0", features = ["zlib-ng-compat"], default-features = false }
 flexi_logger = { version = "=0.16.0", default-features = false, features = ["compress"] }
 flume = "0.10.0"

@@ -117,9 +117,9 @@ describe("Continous proof-of-work", function() {
     s2.startBlockComputation();
     await s2.until('block', 15);
     await s2.stopBlockComputation();
-    await [
+    await Promise.all([
       CrawlerDependency.duniter.methods.pullBlocks(s3._server),
-      new Promise(res => {
+      new Promise<void>(res => {
         s3.pipe(es.mapSync((e:any) => {
           if (e.number === 15) {
             res()
@@ -129,7 +129,7 @@ describe("Continous proof-of-work", function() {
 
       }),
       s3.startBlockComputation()
-    ];
+    ]);
     const current = await s3.get('/blockchain/current')
     await s3.stopBlockComputation();
     current.number.should.be.aboveOrEqual(14)

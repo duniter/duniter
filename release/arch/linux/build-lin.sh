@@ -109,7 +109,15 @@ rm -rf "${BIN}/"*.{deb,tar.gz}{,.desc} # Clean up
 # ------------
 
 cd "${DOWNLOADS}"
-cp -r ~/.nvm/versions/node/${NVER}/ node-${NVER}-linux-x64
+# Utiliser nvm si disponible, sinon télécharger depuis nodejs.org
+if [[ -d ~/.nvm/versions/node/${NVER} ]]; then
+    cp -r ~/.nvm/versions/node/${NVER}/ node-${NVER}-linux-x64
+else
+    echo "nvm installation not found, downloading Node.js directly..."
+    curl -O https://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz || exit 1
+    tar xzf node-${NVER}-linux-x64.tar.gz || exit 1
+    rm node-${NVER}-linux-x64.tar.gz
+fi
 
 # -----------
 # Releases

@@ -87,7 +87,7 @@ export class LevelMIndexExpiresOnIndexer extends LevelDBDataIndex<
         }
       })
     );
-    // Case 2: expiration REVERT
+    // Case 2: REVERT expired = put back the value of `expires_on`
     const values: MindexEntry[] = Underscore.values(
       newStateByPub
     ).map((entries) => reduce(entries));

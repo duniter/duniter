@@ -32,24 +32,25 @@ export const Scrypt = async (
   r = 16,
   p = 1
 ) => {
-  const res: { pub: string; sec: string } = await new Promise(
-    (resolve, reject) => {
-      crypto.scrypt(
-        key,
-        salt,
-        SEED_LENGTH,
-        { N, r, p },
-        (err: any, seed: Buffer) => {
-          if (err) return reject(err);
-          const pair = KeyPairBuilder.fromSeed(seed);
-          resolve({
-            pub: pair.getPublicKey(),
-            sec: seedToSecretKey(seed),
-          });
-        }
-      );
-    }
-  );
+  const res: { pub: string; sec: string } = await new Promise<{
+    pub: string;
+    sec: string;
+  }>((resolve, reject) => {
+    crypto.scrypt(
+      key,
+      salt,
+      SEED_LENGTH,
+      { N, r, p },
+      (err: any, seed: Buffer) => {
+        if (err) return reject(err);
+        const pair = KeyPairBuilder.fromSeed(seed);
+        resolve({
+          pub: pair.getPublicKey(),
+          sec: seedToSecretKey(seed),
+        });
+      }
+    );
+  });
 
   return res;
 };

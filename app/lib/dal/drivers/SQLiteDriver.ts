@@ -29,10 +29,15 @@ export class SQLiteDriver {
   getDB(): Promise<any> {
     if (!this.dbPromise) {
       this.dbPromise = (async () => {
-        this.logger.debug('Opening SQLite database "%s"...', this.path);
+        this.logger.trace('Opening SQLite database "%s"...', this.path);
+
         let sqlite = new sqlite3.Database(this.path);
         await new Promise<any>((resolve) => sqlite.once("open", resolve));
+
         // Database is opened
+        //this.logger.debug('Database "%s" opened', this.path);
+
+        // Trace SQL queries
         if (OtherConstants.SQL_TRACES) {
           sqlite.on("trace", (trace: any) => {
             this.logger.trace(trace);
@@ -41,7 +46,7 @@ export class SQLiteDriver {
 
         // Force case sensitiveness on LIKE operator
         const sql = "PRAGMA case_sensitive_like=ON";
-        await new Promise<any>((resolve, reject) =>
+        await new Promise<void>((resolve, reject) =>
           sqlite.exec(sql, (err: any) => {
             if (err)
               return reject(
@@ -95,12 +100,16 @@ export class SQLiteDriver {
   }
 
   async destroyDatabase(): Promise<void> {
-    this.logger.debug("Removing SQLite database...");
+    this.logger.debug('Removing SQLite database "%s"...', this.path);
     await this.closeConnection();
     if (this.path !== MEMORY_PATH) {
       await RealFS().fsUnlink(this.path);
     }
-    this.logger.debug("Database removed");
+    this.logger.debug('Database "%s" removed', this.path);
+  }
+
+  isClosed() {
+    return !this.dbPromise;
   }
 
   async closeConnection(): Promise<void> {
@@ -111,10 +120,10 @@ export class SQLiteDriver {
     if (process.platform === "win32") {
       db.open; // For an unknown reason, we need this line.
     }
-    await new Promise((resolve, reject) => {
-      this.logger.debug("Trying to close SQLite...");
+    await new Promise<void>((resolve, reject) => {
+      this.logger.trace('Closing SQLite database "%s"...', this.path);
       db.on("close", () => {
-        this.logger.info("Database closed.");
+        //this.logger.info('Database "%s" closed.', this.path);
         this.dbPromise = null;
         resolve();
       });

@@ -24,11 +24,14 @@ import {
   HttpTxPending,
 } from "../dtos";
 import { DBTx } from "../../../../lib/db/DBTx";
-import { Underscore } from "../../../../lib/common-libs/underscore";
 
 const http2raw = require("../http2raw");
 
 export class TransactionBinding extends AbstractController {
+  get medianTimeOffset(): number {
+    return (this.conf.avgGenTime * this.conf.medianTimeBlocks) / 2;
+  }
+
   async parseTransaction(req: any): Promise<HttpTransactionPending> {
     const res = await this.pushEntity(
       req,
@@ -86,50 +89,40 @@ export class TransactionBinding extends AbstractController {
 
   async getHistory(req: any): Promise<HttpTxHistory> {
     const pubkey = await ParametersService.getPubkeyP(req);
-    return this.getFilteredHistory(pubkey, (results: any) => results);
+    const history = await this.server.dal.getTxHistoryByPubkey(pubkey);
+    return this.toHttpTxHistory(pubkey, history);
   }
 
   async getHistoryBetweenBlocks(req: any): Promise<HttpTxHistory> {
     const pubkey = await ParametersService.getPubkeyP(req);
     const from = await ParametersService.getFromP(req);
     const to = await ParametersService.getToP(req);
-    return this.getFilteredHistory(pubkey, (res: any) => {
-      const histo = res.history;
-      histo.sent = Underscore.filter(histo.sent, function (tx: any) {
-        return tx && tx.block_number >= from && tx.block_number <= to;
-      });
-      histo.received = Underscore.filter(histo.received, function (tx: any) {
-        return tx && tx.block_number >= from && tx.block_number <= to;
-      });
-      Underscore.extend(histo, { sending: [], receiving: [] });
-      return res;
-    });
+
+    const history = await this.server.dal.getTxHistoryByPubkeyBetweenBlocks(
+      pubkey,
+      +from,
+      +to
+    );
+    return this.toHttpTxHistory(pubkey, history);
   }
 
   async getHistoryBetweenTimes(req: any): Promise<HttpTxHistory> {
     const pubkey = await ParametersService.getPubkeyP(req);
     const from = await ParametersService.getFromP(req);
     const to = await ParametersService.getToP(req);
-    return this.getFilteredHistory(pubkey, (res: any) => {
-      const histo = res.history;
-      histo.sent = Underscore.filter(histo.sent, function (tx: any) {
-        return tx && tx.time >= from && tx.time <= to;
-      });
-      histo.received = Underscore.filter(histo.received, function (tx: any) {
-        return tx && tx.time >= from && tx.time <= to;
-      });
-      Underscore.extend(histo, { sending: [], receiving: [] });
-      return res;
-    });
+    const medianTimeOffset = this.medianTimeOffset || 0; // Need to convert time into medianTime, because GVA module use median_time
+    const history = await this.server.dal.getTxHistoryByPubkeyBetweenTimes(
+      pubkey,
+      +from - medianTimeOffset,
+      +to - medianTimeOffset
+    );
+    return this.toHttpTxHistory(pubkey, history);
   }
 
-  async getPendingForPubkey(req: any): Promise<HttpTxHistory> {
+  async getPendingByPubkey(req: any): Promise<HttpTxHistory> {
     const pubkey = await ParametersService.getPubkeyP(req);
-    return this.getFilteredHistory(pubkey, function (res: any) {
-      const histo = res.history;
-      Underscore.extend(histo, { sent: [], received: [] });
-      return res;
-    });
+    const history = await this.server.dal.getTxHistoryMempool(pubkey);
+    return this.toHttpTxHistory(pubkey, history);
   }
 
   async getPending(): Promise<HttpTxPending> {
@@ -140,6 +133,7 @@ export class TransactionBinding extends AbstractController {
         const tx = TransactionDTO.fromJSONObject(t);
         return {
           version: tx.version,
+          currency: tx.currency,
           issuers: tx.issuers,
           inputs: tx.inputs,
           unlocks: tx.unlocks,
@@ -156,22 +150,27 @@ export class TransactionBinding extends AbstractController {
     };
   }
 
-  private async getFilteredHistory(
+  private async toHttpTxHistory(
     pubkey: string,
-    filter: any
+    dbTxHistory: {
+      sent?: DBTx[];
+      received?: DBTx[];
+      receiving?: DBTx[];
+      sending?: DBTx[];
+      pending?: DBTx[];
+    }
   ): Promise<HttpTxHistory> {
-    let history = await this.server.dal.getTransactionsHistory(pubkey);
-    let result = {
+    return {
       currency: this.conf.currency,
       pubkey: pubkey,
       history: {
-        sending: history.sending.map(dbtx2HttpTxOfHistory),
-        received: history.received.map(dbtx2HttpTxOfHistory),
-        sent: history.sent.map(dbtx2HttpTxOfHistory),
-        pending: history.pending.map(dbtx2HttpTxOfHistory),
+        sending: dbTxHistory.sending?.map(dbtx2HttpTxOfHistory) || [],
+        received: dbTxHistory.received?.map(dbtx2HttpTxOfHistory) || [],
+        receiving: dbTxHistory.receiving?.map(dbtx2HttpTxOfHistory) || [],
+        sent: dbTxHistory.sent?.map(dbtx2HttpTxOfHistory) || [],
+        pending: dbTxHistory.pending?.map(dbtx2HttpTxOfHistory) || [],
       },
     };
-    return filter(result);
   }
 }
 

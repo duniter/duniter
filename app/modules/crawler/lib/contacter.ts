@@ -19,9 +19,9 @@ const sanitize = require("../../../modules/bma/lib/sanitize");
 const dtos = require("../../../modules/bma").BmaDependency.duniter.methods.dtos;
 
 export class Contacter {
-  path: string = "";
   options: { timeout: number };
   fullyQualifiedHost: string;
+  path: string = "";
 
   constructor(
     public readonly host: string,

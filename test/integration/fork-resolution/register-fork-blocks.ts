@@ -176,7 +176,7 @@ describe("Fork blocks", function() {
     await s2.sharePeeringWith(s1)
     await s2.writeBlock(b4a)
     const b3c = await s3.commit({ time: now + 33 })
-    await new Promise((res, rej) => {
+    await new Promise<void>((res, rej) => {
       const event = CommonConstants.DocumentError
       s2.on(event, (e:any) => {
         try {

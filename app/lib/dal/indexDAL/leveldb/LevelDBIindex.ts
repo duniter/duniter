@@ -61,10 +61,10 @@ export class LevelDBIindex extends LevelDBTable<IindexEntry[]>
 
   async close(): Promise<void> {
     await super.close();
-    await this.indexForHash.close();
-    await this.indexForUid.close();
-    await this.indexForKick.close();
-    await this.indexForWrittenOn.close();
+    await this.indexForHash?.close();
+    await this.indexForUid?.close();
+    await this.indexForKick?.close();
+    await this.indexForWrittenOn?.close();
   }
 
   /**
@@ -279,5 +279,13 @@ export class LevelDBIindex extends LevelDBTable<IindexEntry[]>
     return uidIdentities
       .filter((u) => u.pub)
       .concat(pubIdentities.filter((p) => p.pub));
+  }
+
+  async getOldFromPubkey(pub: string): Promise<OldIindexEntry | null> {
+    const identities = await this.findByPub(pub);
+    if (!identities.length) {
+      return null;
+    }
+    return OldTransformers.toOldIindexEntry(reduce(identities));
   }
 }

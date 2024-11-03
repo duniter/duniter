@@ -19,6 +19,8 @@ export interface IIndexDAO extends ReduceableDAO<IindexEntry> {
 
   searchThoseMatching(search: string): Promise<OldIindexEntry[]>;
 
+  getOldFromPubkey(pub: string): Promise<OldIindexEntry | null>;
+
   getFullFromUID(uid: string): Promise<FullIindexEntry>;
 
   getFullFromPubkey(pub: string): Promise<FullIindexEntry>;

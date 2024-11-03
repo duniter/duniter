@@ -30,7 +30,7 @@ import { MindexEntry } from "../lib/indexer";
 import { DataErrors } from "../lib/common-libs/errors";
 import { Tristamp } from "../lib/common/Tristamp";
 
-"use strict";
+("use strict");
 const constants = require("../lib/constants");
 
 const BY_ABSORPTION = true;
@@ -52,6 +52,10 @@ export class IdentityService extends FIFOService {
 
   searchIdentities(search: string) {
     return this.dal.searchJustIdentities(search);
+  }
+
+  searchIdentitiesByPubkey(pubkey: string) {
+    return this.dal.searchJustIdentitiesByPubkey(pubkey);
   }
 
   async findMember(search: string) {

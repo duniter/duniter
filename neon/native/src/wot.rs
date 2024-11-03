@@ -327,8 +327,8 @@ declare_types! {
 
             match distance_res {
                 Ok(distance_data) => Ok(cx.boolean(distance_data.outdistanced).upcast()),
-                Err(e) => match e {
-                    DistanceError::NodeDontExist(wot_id) => cx.throw_error(format!("node '{}' not exist.", wot_id.0)),
+                Err(DistanceError::NodeDontExist(wot_id)) => {
+                    cx.throw_error(format!("node '{}' not exist.", wot_id.0))
                 }
             }
         }
@@ -345,8 +345,8 @@ declare_types! {
 
             match distance_res {
                 Ok(distance_data) => distance_response_to_js_object(cx, distance_data),
-                Err(e) => match e {
-                    DistanceError::NodeDontExist(wot_id) => cx.throw_error(format!("node '{}' not exist.", wot_id.0)),
+                Err(DistanceError::NodeDontExist(wot_id)) => {
+                    cx.throw_error(format!("node '{}' not exist.", wot_id.0))
                 }
             }
         }

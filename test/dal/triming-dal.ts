@@ -15,6 +15,8 @@ import {FileDAL} from "../../app/lib/dal/fileDAL"
 import {Directory} from "../../app/lib/system/directory"
 import {Indexer} from "../../app/lib/indexer"
 import {simpleNodeWith2Users} from "../integration/tools/toolbox"
+import {LevelDBSindex} from "../../app/lib/dal/indexDAL/leveldb/LevelDBSindex";
+import {requiredBindexSizeForTail} from "../../app/lib/blockchain/DuniterBlockchain";
 
 const should = require('should');
 
@@ -119,34 +121,79 @@ describe("Triming", function(){
     await dal.sindexDAL.insertBatch([
       { op: 'CREATE', identifier: 'SOURCE_1', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'COND(SOURCE_1)'},
       { op: 'UPDATE', identifier: 'SOURCE_1', pos: 4, written_on: '139-H', writtenOn: 139, written_time: 4500, consumed: true, conditions: 'COND(SOURCE_1)'},
-      { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'COND(SOURCE_2)'},
-      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'COND(SOURCE_3)'}
+      { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2500, consumed: false, conditions: 'COND(SOURCE_2)'},
+      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2500, consumed: false, conditions: 'SIG(PUB_1)'}
     ] as any);
     (await dal.sindexDAL.findByIdentifier('SOURCE_1')).should.have.length(2);
+    (await dal.sindexDAL.getAvailableForConditions('COND(SOURCE_2)')).should.have.length(1);
+    (await dal.sindexDAL.getAvailableForPubkey('PUB_1')).should.have.length(1);
     (await dal.sindexDAL.findByPos(4)).should.have.length(4);
   })
 
   it('should be able to trim the sindex', async () => {
-    // Triming
+    const sindexDAL = dal.sindexDAL as LevelDBSindex;
+
+    // First triming before b#140 => should kept some sources
     await dal.trimIndexes(140);
     (await dal.sindexDAL.findByIdentifier('SOURCE_1')).should.have.length(0);
+    (await dal.sindexDAL.getAvailableForConditions('COND(SOURCE_1)')).should.have.length(0);
+    (await dal.sindexDAL.getAvailableForConditions('COND(SOURCE_2)')).should.have.length(1);
+    (await dal.sindexDAL.getAvailableForPubkey('PUB_1')).should.have.length(1);
     (await dal.sindexDAL.findByPos(4)).should.have.length(2);
+
+    // Check internal index
+    should.not.exist(await sindexDAL.getIndexForConditions().getOrNull("COND(SOURCE_1)")); // The only source at this condition was trimmed
+    should.not.exist(await sindexDAL.getIndexForConsumed().getOrNull("0000000139")); // The only consumption at this block was trimmed
+    let entriesAt0000000126 = await sindexDAL.getIndexForTrimming().getOrNull("0000000126");
+
+    // https://git.duniter.org/nodes/typescript/duniter/-/issues/1447
+    entriesAt0000000126.should.not.containEql('SOURCE_1-0000000004'); // This CREATE entry should have been trimmed
+
+    let entriesAt0000000139 = await sindexDAL.getIndexForTrimming().getOrNull("0000000139");
+    should.not.exist(entriesAt0000000139);
+
+    // Now we consume all sources
+    await dal.sindexDAL.insertBatch([
+      { op: 'UPDATE', identifier: 'SOURCE_2', pos: 4, written_on: '140-H', writtenOn: 140, written_time: 5000, consumed: true, conditions: 'COND(SOURCE_2)'},
+      { op: 'UPDATE', identifier: 'SOURCE_3', pos: 4, written_on: '140-H', writtenOn: 140, written_time: 5000, consumed: true, conditions: 'SIG(PUB_1)'}
+    ] as any);
+
+    // Second triming => should remove all sources
+    await dal.trimIndexes(141);
+    (await dal.sindexDAL.getAvailableForConditions('COND(SOURCE_2)')).should.have.length(0);
+    (await dal.sindexDAL.getAvailableForPubkey('PUB_1')).should.have.length(0);
+    (await dal.sindexDAL.findByPos(4)).should.have.length(0);
+
+    // All sub index should be empty
+    for (let index of sindexDAL.getInternalIndexes()) {
+      const res = await index.findAllKeys();
+      // https://git.duniter.org/nodes/typescript/duniter/-/issues/1447
+      res.should.have.length(0, `index ${index['name']} should have been trimmed`);
+    }
   })
 
   it('should be able to trim the bindex', async () => {
     // Triming
-    const server = (await simpleNodeWith2Users({
+    const conf = {
       forksize: 9,
       sigQty: 1,
       dtDiffEval: 2,
       medianTimeBlocks: 3
-    })).s1;
+    };
+    const server = (await simpleNodeWith2Users(conf)).s1;
+
     // const s1 = server.s1;
-    for (let i = 0; i < 13; i++) {
+    const b0 = await server.commit()
+
+    const requiredBindexSize = requiredBindexSizeForTail(b0, conf);
+    should(requiredBindexSize).equal(12);
+
+    for (let i = 1; i <= requiredBindexSize; i++) {
       await server.commit();
     }
     (await server.dal.bindexDAL.head(1)).should.have.property('number').equal(12);
     (await server.dal.bindexDAL.head(13)).should.have.property('number').equal(0);
+
     await server.commit();
     should.not.exists(await server.dal.bindexDAL.head(14)); // Trimed
 

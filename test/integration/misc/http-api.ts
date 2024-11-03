@@ -350,7 +350,7 @@ function postBlock(server2:TestingServer) {
     })
       .then(async (result:HttpBlock) => {
         const numberToReach = block.number
-        await new Promise((res) => {
+        await new Promise<void>((res) => {
           const interval = setInterval(async () => {
             const current = await server2.dal.getCurrentBlockOrNull()
             if (current && current.number == numberToReach) {

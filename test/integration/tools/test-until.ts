@@ -18,7 +18,7 @@ const UNTIL_TIMEOUT = 115000;
 export function until(server:TestingServer, eventName:string, count:number) {
   let counted = 0;
   const max = count == undefined ? 1 : count;
-  return new Promise(function (resolve, reject) {
+  return new Promise<void>(function (resolve, reject) {
     let finished = false;
     server._server.on(eventName, function () {
       counted++;

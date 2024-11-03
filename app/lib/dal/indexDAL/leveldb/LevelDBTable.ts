@@ -12,14 +12,13 @@ export class LevelDBTable<T> {
 
   cleanCache(): void {}
 
-  triggerInit(): void {}
-
-  async close() {
-    await this.db.close();
-  }
-
   async init(): Promise<void> {
     this.db = await this.getLevelDB(`${this.name}`);
+    await this.db.open();
+  }
+
+  async close() {
+    await this.db?.close();
   }
 
   public async get(k: string): Promise<T> {
@@ -74,7 +73,7 @@ export class LevelDBTable<T> {
 
   public async count(options?: AbstractIteratorOptions) {
     let count = 0;
-    await new Promise((res) => {
+    await new Promise<void>((res) => {
       this.db
         .createReadStream(options)
         .on("data", () => count++)
@@ -87,7 +86,7 @@ export class LevelDBTable<T> {
     callback: (entry: T) => void,
     options?: AbstractIteratorOptions
   ) {
-    await new Promise((res) => {
+    await new Promise<void>((res) => {
       this.db
         .createReadStream(options)
         .on("data", (data) => callback(JSON.parse(String(data.value))))
@@ -99,7 +98,7 @@ export class LevelDBTable<T> {
     callback: (entry: { key: string; value: T }) => void,
     options?: AbstractIteratorOptions
   ) {
-    await new Promise((res) => {
+    await new Promise<void>((res) => {
       this.db
         .createReadStream(options)
         .on("data", (data) =>
@@ -117,7 +116,7 @@ export class LevelDBTable<T> {
     options?: AbstractIteratorOptions
   ) {
     const ops: Promise<void>[] = [];
-    await new Promise((res) => {
+    await new Promise<void>((res) => {
       this.db
         .createReadStream(options)
         .on("data", (data) =>

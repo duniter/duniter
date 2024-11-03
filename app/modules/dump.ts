@@ -41,6 +41,7 @@ import {
 } from "../lib/dto/CertificationDTO";
 import { MembershipDTO } from "../lib/dto/MembershipDTO";
 import { RevocationDTO, ShortRevocation } from "../lib/dto/RevocationDTO";
+import { NewLogger } from "../lib/logger";
 
 const Table = require("cli-table");
 
@@ -156,6 +157,7 @@ module.exports = {
                 break;
 
               case "wotwizard":
+                NewLogger().unmute();
                 await dumpWotWizard(server);
                 break;
 

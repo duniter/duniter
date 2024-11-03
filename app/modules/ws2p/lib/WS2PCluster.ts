@@ -11,7 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import { DEFAULT_ENCODING } from "crypto";
 import { WS2PServer } from "./WS2PServer";
 import { Server } from "../../../../server";
 import { WS2PClient } from "./WS2PClient";
@@ -38,7 +37,6 @@ import { TransactionDTO } from "../../../lib/dto/TransactionDTO";
 
 const es = require("event-stream");
 const nuuid = require("node-uuid");
-const logger = NewLogger();
 
 export interface WS2PHead {
   message: string;
@@ -576,6 +574,7 @@ export class WS2PCluster {
     const canReachClearEndpoint = ProxiesConf.canReachClearEndpoint(
       this.server.conf.proxiesConf
     );
+    const isMember = await this.server.dal.isMember(this.server.conf.pair.pub);
     peers.sort((a, b) => {
       // Top priority at our own nodes
       if (
@@ -595,12 +594,14 @@ export class WS2PCluster {
       const aNumberOfFreeRooms = this.numberOfFreeRooms(
         a,
         canReachTorEndpoint,
-        canReachClearEndpoint
+        canReachClearEndpoint,
+        isMember
       );
       const bNumberOfFreeRooms = this.numberOfFreeRooms(
         b,
         canReachTorEndpoint,
-        canReachClearEndpoint
+        canReachClearEndpoint,
+        isMember
       );
 
       if (canReachTorEndpoint) {
@@ -744,7 +745,8 @@ export class WS2PCluster {
   private numberOfFreeRooms(
     p: PeerDTO,
     canReachTorEndpoint: boolean,
-    canReachClearEndpoint: boolean
+    canReachClearEndpoint: boolean,
+    isMember: boolean
   ) {
     const api = p.getOnceWS2PEndpoint(
       canReachTorEndpoint,
@@ -768,9 +770,7 @@ export class WS2PCluster {
               freeMemberRoom,
               freeMirorRoom,
             ]: string[] = messageV2.split(":");
-            return this.server.dal.isMember(this.server.conf.pair.pub)
-              ? freeMemberRoom
-              : freeMirorRoom;
+            return isMember ? freeMemberRoom : freeMirorRoom;
           }
         }
       }

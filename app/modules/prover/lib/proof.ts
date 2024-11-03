@@ -53,7 +53,7 @@ export function createPowWorker() {
     process.exit(ExitCodes.OK);
   });
 
-  process.on("message", async (message) => {
+  process.on("message", async (message: any) => {
     switch (message.command) {
       case "newPoW":
         (async () => {
@@ -383,7 +383,7 @@ export function createPowWorker() {
   }
 
   function pSend(stuff: any) {
-    return new Promise(function (resolve, reject) {
+    return new Promise<void>(function (resolve, reject) {
       if (process.send) {
         process.send(stuff, function (error: any) {
           !error && resolve();

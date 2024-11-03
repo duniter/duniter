@@ -79,3 +79,7 @@ export function assertNull(value: any) {
 export function assertFalse(expected: boolean) {
   assert.equal(false, expected)
 }
+
+export function assertDeepEqual(value: any, expected: any) {
+  assert.deepEqual(value, expected)
+}
